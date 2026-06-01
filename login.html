@@ -252,29 +252,29 @@
             50% { transform: translateY(-20px) rotate(180deg); }
         }
         
-        .kidney-container {
-            width: 100px;
-            height: 100px;
+        .ecg-container {
+            width: 200px;
+            height: 60px;
             margin: 0 auto 15px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         
-        .kidney-icon {
+        .ecg-line {
             width: 100%;
             height: 100%;
-            animation: kidneyPulse 3s ease-in-out infinite;
+            animation: ecgPulse 2s ease-in-out infinite;
         }
         
-        @keyframes kidneyPulse {
+        @keyframes ecgPulse {
             0%, 100% { 
-                opacity: 0.7;
-                transform: scale(1);
+                opacity: 0.3;
+                transform: scale(0.95);
             }
             50% { 
                 opacity: 1;
-                transform: scale(1.08);
+                transform: scale(1.05);
             }
         }
     </style>
@@ -288,16 +288,14 @@
         </div>
         <div class="login-card card fade-in">
             <div class="login-header">
-                <div class="kidney-container">
-                    <svg class="kidney-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M30,20 C15,20 5,35 5,50 C5,70 20,85 35,85 C45,85 55,75 60,65 C65,75 75,85 85,85 C95,85 100,70 100,50 C100,35 90,20 75,20 C65,20 60,30 55,40 C50,30 45,20 30,20 Z" 
+                <div class="ecg-container">
+                    <svg class="ecg-line" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0,30 L30,30 L40,30 L50,10 L60,50 L70,30 L80,30 L90,30 L100,5 L110,55 L120,30 L130,30 L140,30 L150,15 L160,45 L170,30 L200,30" 
                               fill="none" 
                               stroke="#007bff" 
                               stroke-width="3" 
                               stroke-linecap="round" 
                               stroke-linejoin="round"/>
-                        <ellipse cx="35" cy="50" rx="8" ry="12" fill="#007bff" opacity="0.3"/>
-                        <ellipse cx="75" cy="50" rx="8" ry="12" fill="#007bff" opacity="0.3"/>
                     </svg>
                 </div>
                 <h3>Dr. Shabeel Sulaiman's Logbook</h3>
