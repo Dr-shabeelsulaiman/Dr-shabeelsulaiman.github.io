@@ -270,18 +270,54 @@ body {
 @media (max-width: 768px) {
     #searchInput {
         padding-left: 35px;
-        font-size: 16px;
+        font-size: 16px !important;
         min-height: 44px;
+        height: 44px;
         /* Ensure touch target meets mobile guidelines */
         touch-action: manipulation;
         /* Fix for Android */
         -webkit-user-modify: read-write-plaintext-only;
+        /* Remove all background images that might interfere */
+        background-image: none !important;
+        /* Add simple border instead */
+        border: 2px solid #e9ecef !important;
+        /* Ensure proper sizing */
+        box-sizing: border-box;
+        /* Remove any transforms */
+        transform: none !important;
+        /* Ensure cursor appears */
+        caret-color: #007bff;
+        /* Remove webkit appearance */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
     }
     
     #searchInput:focus {
-        font-size: 16px;
+        font-size: 16px !important;
+        height: 44px;
         /* Prevent iOS zoom */
-        transform: scale(1);
+        transform: scale(1) !important;
+        /* Simple focus style */
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        outline: none !important;
+    }
+    
+    /* Add search icon as separate element for mobile */
+    .search-container {
+        position: relative;
+        flex: 1;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+        pointer-events: none;
     }
 }
 

@@ -599,9 +599,19 @@ function printDateRange() {
 }
 
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
-    const printWindow = window.open('', '_blank');
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
+    
+    // Check if mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Mobile fallback - create downloadable HTML file
+        generateMobileReport(patientsToPrint, startDate, endDate, format, includeEmptyFields);
+        return;
+    }
+    
+    const printWindow = window.open('', '_blank');
     
     let content = `
         <!DOCTYPE html>
@@ -929,6 +939,312 @@ function generateCompactReport(patientsToPrint) {
                 <td>${patient.phone || '-'}</td>
                 <td>${escapeHtml(truncateText(patient.chiefComplaint, 50))}</td>
                 <td>${patient.diagnosis ? escapeHtml(truncateText(patient.diagnosis, 50)) : '-'}</td>
+            </tr>
+        `;
+    });
+    
+    content += `
+            </tbody>
+        </table>
+    `;
+    
+    return content;
+}
+
+function generateMobileReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
+    const startDateFormatted = formatDate(startDate);
+    const endDateFormatted = formatDate(endDate);
+    
+    let content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Dr. Shabeel Sulaiman's Logbook - Patient Report</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 10px; 
+                    padding: 15px;
+                    color: #333;
+                    font-size: 14px;
+                    line-height: 1.4;
+                }
+                
+                .header { 
+                    text-align: center; 
+                    border-bottom: 2px solid #007bff; 
+                    padding-bottom: 15px; 
+                    margin-bottom: 20px;
+                }
+                
+                .header h1 { 
+                    color: #007bff; 
+                    margin-bottom: 8px; 
+                    font-size: 20px;
+                }
+                
+                .header p { 
+                    margin: 3px 0; 
+                    color: #666;
+                    font-size: 12px;
+                }
+                
+                .patient-record { 
+                    margin-bottom: 20px; 
+                    border: 1px solid #ddd; 
+                    border-radius: 5px; 
+                    padding: 15px;
+                    background: #f9f9f9;
+                }
+                
+                .patient-header { 
+                    background: #007bff; 
+                    color: white; 
+                    padding: 10px; 
+                    margin: -15px -15px 15px -15px; 
+                    border-radius: 5px 5px 0 0;
+                }
+                
+                .serial-number {
+                    background: rgba(255,255,255,0.2);
+                    padding: 2px 8px;
+                    border-radius: 3px;
+                    font-weight: bold;
+                    font-size: 12px;
+                    float: right;
+                }
+                
+                .info-item { 
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                }
+                
+                .info-label { 
+                    font-weight: bold; 
+                    color: #555;
+                    display: inline-block;
+                    min-width: 100px;
+                }
+                
+                .section-title { 
+                    font-weight: bold; 
+                    color: #007bff; 
+                    margin-top: 12px; 
+                    margin-bottom: 6px;
+                    font-size: 13px;
+                    border-bottom: 1px solid #e9ecef;
+                    padding-bottom: 2px;
+                }
+                
+                .mobile-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin-top: 15px;
+                    font-size: 12px;
+                }
+                
+                .mobile-table th, .mobile-table td { 
+                    border: 1px solid #ddd; 
+                    padding: 8px; 
+                    text-align: left;
+                }
+                
+                .mobile-table th { 
+                    background: #f8f9fa; 
+                    font-weight: bold;
+                }
+                
+                .mobile-table .serial-col {
+                    width: 50px;
+                    text-align: center;
+                    font-weight: bold;
+                }
+                
+                .download-btn {
+                    background: #007bff;
+                    color: white;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 5px;
+                    font-size: 16px;
+                    margin: 20px 0;
+                    cursor: pointer;
+                    display: block;
+                    width: 100%;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Dr. Shabeel Sulaiman's Logbook</h1>
+                <p><strong>Patient Report</strong></p>
+                <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
+                <p>Generated on: ${formatDate(new Date().toISOString())}</p>
+                <p>Total Patients: ${patientsToPrint.length}</p>
+            </div>
+    `;
+    
+    if (format === 'summary') {
+        content += generateMobileSummaryReport(patientsToPrint, includeEmptyFields);
+    } else if (format === 'compact') {
+        content += generateMobileCompactReport(patientsToPrint);
+    } else {
+        content += generateMobileDetailedReport(patientsToPrint, includeEmptyFields);
+    }
+    
+    content += `
+            <button class="download-btn" onclick="window.print()">
+                📄 Print This Report
+            </button>
+            <div style="text-align: center; margin-top: 20px; color: #666; font-size: 12px;">
+                <p>💡 Tip: Use your browser's print function to save as PDF</p>
+                <p>End of Report - Dr. Shabeel Sulaiman's Logbook</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    // Create blob and download
+    const blob = new Blob([content], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patient-report-${startDate}-${endDate}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    // Show success message
+    showSuccess('Report downloaded! Open the file to print or save as PDF.');
+}
+
+function generateMobileDetailedReport(patientsToPrint, includeEmptyFields) {
+    let content = '';
+    
+    patientsToPrint.forEach((patient, index) => {
+        content += `
+            <div class="patient-record">
+                <div class="patient-header">
+                    <h3 style="margin: 0; font-size: 16px;">Patient ${index + 1}: ${escapeHtml(patient.name)}</h3>
+                    <div class="serial-number">S.No: ${index + 1}</div>
+                    <p style="margin: 5px 0 0 0; font-size: 12px;">Visit Date: ${formatDate(patient.visitDate)}</p>
+                </div>
+                <div class="info-item"><span class="info-label">Age:</span> ${patient.age}</div>
+                <div class="info-item"><span class="info-label">Gender:</span> ${patient.gender}</div>
+                <div class="info-item"><span class="info-label">Phone:</span> ${patient.phone || (includeEmptyFields ? '<span style="color: #999; font-style: italic;">Not provided</span>' : '')}</div>
+                <div class="info-item"><span class="info-label">Email:</span> ${patient.email || (includeEmptyFields ? '<span style="color: #999; font-style: italic;">Not provided</span>' : '')}</div>
+                
+                <div class="section-title">Chief Complaint:</div>
+                <div style="margin-bottom: 10px;">${escapeHtml(patient.chiefComplaint)}</div>
+                
+                ${(patient.diagnosis || includeEmptyFields) ? `
+                    <div class="section-title">Diagnosis:</div>
+                    <div style="margin-bottom: 10px;">${patient.diagnosis ? escapeHtml(patient.diagnosis) : '<span style="color: #999; font-style: italic;">No diagnosis recorded</span>'}</div>
+                ` : ''}
+                
+                ${(patient.treatment || includeEmptyFields) ? `
+                    <div class="section-title">Treatment Plan:</div>
+                    <div style="margin-bottom: 10px;">${patient.treatment ? escapeHtml(patient.treatment) : '<span style="color: #999; font-style: italic;">No treatment recorded</span>'}</div>
+                ` : ''}
+                
+                ${(patient.notes || includeEmptyFields) ? `
+                    <div class="section-title">Additional Notes:</div>
+                    <div>${patient.notes ? escapeHtml(patient.notes) : '<span style="color: #999; font-style: italic;">No additional notes</span>'}</div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    return content;
+}
+
+function generateMobileSummaryReport(patientsToPrint, includeEmptyFields) {
+    let content = '<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ddd;">';
+    
+    // Statistics
+    const ageGroups = {
+        '0-18': patientsToPrint.filter(p => p.age <= 18).length,
+        '19-35': patientsToPrint.filter(p => p.age > 18 && p.age <= 35).length,
+        '36-50': patientsToPrint.filter(p => p.age > 35 && p.age <= 50).length,
+        '51+': patientsToPrint.filter(p => p.age > 50).length
+    };
+    
+    const genderCount = {
+        'Male': patientsToPrint.filter(p => p.gender === 'Male').length,
+        'Female': patientsToPrint.filter(p => p.gender === 'Female').length,
+        'Other': patientsToPrint.filter(p => p.gender === 'Other').length
+    };
+    
+    content += `
+        <h3 style="margin-top: 0;">Summary Statistics</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <h4 style="margin: 0 0 10px 0; font-size: 14px;">Age Distribution</h4>
+                <p style="margin: 5px 0; font-size: 12px;">0-18 years: ${ageGroups['0-18']} patients</p>
+                <p style="margin: 5px 0; font-size: 12px;">19-35 years: ${ageGroups['19-35']} patients</p>
+                <p style="margin: 5px 0; font-size: 12px;">36-50 years: ${ageGroups['36-50']} patients</p>
+                <p style="margin: 5px 0; font-size: 12px;">51+ years: ${ageGroups['51+']} patients</p>
+            </div>
+            <div>
+                <h4 style="margin: 0 0 10px 0; font-size: 14px;">Gender Distribution</h4>
+                <p style="margin: 5px 0; font-size: 12px;">Male: ${genderCount['Male']} patients</p>
+                <p style="margin: 5px 0; font-size: 12px;">Female: ${genderCount['Female']} patients</p>
+                <p style="margin: 5px 0; font-size: 12px;">Other: ${genderCount['Other']} patients</p>
+            </div>
+        </div>
+    `;
+    
+    content += '</div>';
+    
+    // Brief patient list
+    content += '<h3>Patient Summary</h3>';
+    patientsToPrint.forEach((patient, index) => {
+        content += `
+            <div class="patient-record">
+                <div class="patient-header">
+                    <h4 style="margin: 0; font-size: 15px;">${index + 1}. ${escapeHtml(patient.name)}</h4>
+                    <div class="serial-number">S.No: ${index + 1}</div>
+                </div>
+                <div class="info-item"><span class="info-label">Visit Date:</span> ${formatDate(patient.visitDate)}</div>
+                <div class="info-item"><span class="info-label">Age/Gender:</span> ${patient.age}/${patient.gender}</div>
+                <div class="info-item"><span class="info-label">Contact:</span> ${patient.phone || 'Not provided'}</div>
+                <div class="info-item"><span class="info-label">Chief Complaint:</span> ${escapeHtml(truncateText(patient.chiefComplaint, 100))}</div>
+                <div class="info-item"><span class="info-label">Diagnosis:</span> ${patient.diagnosis ? escapeHtml(truncateText(patient.diagnosis, 100)) : 'Not recorded'}</div>
+            </div>
+        `;
+    });
+    
+    return content;
+}
+
+function generateMobileCompactReport(patientsToPrint) {
+    let content = `
+        <table class="mobile-table">
+            <thead>
+                <tr>
+                    <th class="serial-col">S.No</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    patientsToPrint.forEach((patient, index) => {
+        content += `
+            <tr>
+                <td class="serial-col">${index + 1}</td>
+                <td>${formatDate(patient.visitDate)}</td>
+                <td>${escapeHtml(patient.name)}</td>
+                <td>${patient.age}</td>
+                <td>${patient.gender}</td>
+                <td>${patient.phone || '-'}</td>
             </tr>
         `;
     });

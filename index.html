@@ -191,7 +191,10 @@
                                 Patient Records
                             </h5>
                             <div class="d-flex gap-2 flex-wrap flex-md-nowrap">
-                                <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search patients..." autocomplete="off">
+                                <div class="search-container">
+                                    <i class="bi bi-search search-icon d-none d-md-block"></i>
+                                    <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search patients..." autocomplete="off">
+                                </div>
                                 <button class="btn btn-light btn-sm flex-shrink-0" onclick="loadPatients()">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
