@@ -59,8 +59,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="window.print()">
-                            <i class="bi bi-printer me-1"></i>Print
+                        <a class="nav-link" href="#" onclick="showPrintRangeModal()">
+                            <i class="bi bi-printer me-1"></i>Print Report
                         </a>
                     </li>
                     <li class="nav-item">
@@ -190,9 +190,9 @@
                                 <i class="bi bi-people-fill me-2"></i>
                                 Patient Records
                             </h5>
-                            <div class="d-flex gap-2">
-                                <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search patients...">
-                                <button class="btn btn-light btn-sm" onclick="loadPatients()">
+                            <div class="d-flex gap-2 flex-wrap flex-md-nowrap">
+                                <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search patients..." autocomplete="off">
+                                <button class="btn btn-light btn-sm flex-shrink-0" onclick="loadPatients()">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
                             </div>
@@ -264,6 +264,58 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" onclick="printPatientRecord()">
                         <i class="bi bi-printer me-1"></i>Print Record
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Date Range Modal -->
+    <div class="modal fade" id="printRangeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-calendar-range me-2"></i>Select Date Range for Printing
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="printRangeForm">
+                        <div class="mb-3">
+                            <label for="printStartDate" class="form-label">
+                                <i class="bi bi-calendar-event me-1"></i>Start Date
+                            </label>
+                            <input type="date" class="form-control" id="printStartDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="printEndDate" class="form-label">
+                                <i class="bi bi-calendar-event me-1"></i>End Date
+                            </label>
+                            <input type="date" class="form-control" id="printEndDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="printFormat" class="form-label">
+                                <i class="bi bi-file-earmark me-1"></i>Print Format
+                            </label>
+                            <select class="form-select" id="printFormat">
+                                <option value="detailed">Detailed Report</option>
+                                <option value="summary">Summary Report</option>
+                                <option value="compact">Compact List</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="includeEmptyFields" checked>
+                            <label class="form-check-label" for="includeEmptyFields">
+                                Include empty fields in report
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info" onclick="printDateRange()">
+                        <i class="bi bi-printer me-1"></i>Generate PDF
                     </button>
                 </div>
             </div>

@@ -50,9 +50,32 @@ function setupEventListeners() {
 
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+    
+    // Standard input event
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
         filterPatients(searchTerm);
+    });
+    
+    // Mobile-specific fixes
+    searchInput.addEventListener('touchstart', function(e) {
+        e.target.focus();
+    });
+    
+    // Prevent zoom on iOS by ensuring font size is 16px on focus
+    searchInput.addEventListener('focus', function(e) {
+        e.target.style.fontSize = '16px';
+    });
+    
+    searchInput.addEventListener('blur', function(e) {
+        e.target.style.fontSize = '';
+    });
+    
+    // Ensure proper touch handling on mobile
+    searchInput.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.target.focus();
     });
 }
 
@@ -526,7 +549,401 @@ function getMockPatients() {
     ];
 }
 
+// Print date range functionality
+function showPrintRangeModal() {
+    const modal = new bootstrap.Modal(document.getElementById('printRangeModal'));
+    
+    // Set default date range (last 30 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    
+    document.getElementById('printEndDate').value = endDate.toISOString().split('T')[0];
+    document.getElementById('printStartDate').value = startDate.toISOString().split('T')[0];
+    
+    modal.show();
+}
+
+function printDateRange() {
+    const startDate = document.getElementById('printStartDate').value;
+    const endDate = document.getElementById('printEndDate').value;
+    const format = document.getElementById('printFormat').value;
+    const includeEmptyFields = document.getElementById('includeEmptyFields').checked;
+    
+    if (!startDate || !endDate) {
+        showError('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showError('Start date must be before end date');
+        return;
+    }
+    
+    // Filter patients by date range
+    const filteredPatients = patients.filter(patient => {
+        const visitDate = new Date(patient.visitDate);
+        return visitDate >= new Date(startDate) && visitDate <= new Date(endDate + 'T23:59:59');
+    });
+    
+    if (filteredPatients.length === 0) {
+        showError('No patients found in the selected date range');
+        return;
+    }
+    
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('printRangeModal')).hide();
+    
+    // Generate print content
+    generatePrintReport(filteredPatients, startDate, endDate, format, includeEmptyFields);
+}
+
+function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
+    const printWindow = window.open('', '_blank');
+    const startDateFormatted = formatDate(startDate);
+    const endDateFormatted = formatDate(endDate);
+    
+    let content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Dr. Shabeel Sulaiman's Logbook - Patient Report</title>
+            <style>
+                @page {
+                    size: A4;
+                    margin: 15mm;
+                }
+                
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 20px;
+                    color: #333;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    width: 210mm;
+                    box-sizing: border-box;
+                }
+                
+                .header { 
+                    text-align: center; 
+                    border-bottom: 2px solid #007bff; 
+                    padding-bottom: 15px; 
+                    margin-bottom: 20px;
+                }
+                
+                .header h1 { 
+                    color: #007bff; 
+                    margin-bottom: 8px; 
+                    font-size: 18px;
+                }
+                
+                .header p { 
+                    margin: 3px 0; 
+                    color: #666;
+                    font-size: 11px;
+                }
+                
+                .summary { 
+                    background: #f8f9fa; 
+                    padding: 12px; 
+                    border-radius: 5px; 
+                    margin-bottom: 15px;
+                    border: 1px solid #ddd;
+                }
+                
+                .patient-record { 
+                    margin-bottom: 20px; 
+                    page-break-inside: avoid; 
+                    border: 1px solid #ddd; 
+                    border-radius: 5px; 
+                    padding: 12px;
+                }
+                
+                .patient-header { 
+                    background: #007bff; 
+                    color: white; 
+                    padding: 8px 12px; 
+                    margin: -12px -12px 12px -12px; 
+                    border-radius: 5px 5px 0 0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                
+                .patient-header h3 {
+                    margin: 0;
+                    font-size: 14px;
+                }
+                
+                .serial-number {
+                    background: rgba(255,255,255,0.2);
+                    padding: 2px 8px;
+                    border-radius: 3px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }
+                
+                .info-grid { 
+                    display: grid; 
+                    grid-template-columns: 1fr 1fr; 
+                    gap: 8px; 
+                    margin-bottom: 12px;
+                }
+                
+                .info-item { 
+                    margin-bottom: 4px;
+                    font-size: 11px;
+                }
+                
+                .info-label { 
+                    font-weight: bold; 
+                    color: #555;
+                    display: inline-block;
+                    min-width: 80px;
+                }
+                
+                .section-title { 
+                    font-weight: bold; 
+                    color: #007bff; 
+                    margin-top: 12px; 
+                    margin-bottom: 4px;
+                    font-size: 12px;
+                    border-bottom: 1px solid #e9ecef;
+                    padding-bottom: 2px;
+                }
+                
+                .empty-field { 
+                    color: #999; 
+                    font-style: italic;
+                }
+                
+                .compact-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin-top: 15px;
+                    font-size: 10px;
+                }
+                
+                .compact-table th, .compact-table td { 
+                    border: 1px solid #ddd; 
+                    padding: 6px 8px; 
+                    text-align: left;
+                    vertical-align: top;
+                }
+                
+                .compact-table th { 
+                    background: #f8f9fa; 
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                
+                .compact-table .serial-col {
+                    width: 40px;
+                    text-align: center;
+                    font-weight: bold;
+                }
+                
+                @media print { 
+                    .no-print { display: none !important; }
+                    body { margin: 0; padding: 15mm; }
+                    .patient-record { page-break-inside: avoid; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Dr. Shabeel Sulaiman's Logbook</h1>
+                <p><strong>Patient Report</strong></p>
+                <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
+                <p>Generated on: ${formatDate(new Date().toISOString())}</p>
+                <p>Total Patients: ${patientsToPrint.length}</p>
+            </div>
+    `;
+    
+    if (format === 'summary') {
+        content += generateSummaryReport(patientsToPrint, includeEmptyFields);
+    } else if (format === 'compact') {
+        content += generateCompactReport(patientsToPrint);
+    } else {
+        content += generateDetailedReport(patientsToPrint, includeEmptyFields);
+    }
+    
+    content += `
+            <div class="no-print" style="margin-top: 30px; text-align: center;">
+                <p style="color: #666;">End of Report - Dr. Shabeel Sulaiman's Logbook</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Wait for content to load, then print
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
+}
+
+function generateDetailedReport(patientsToPrint, includeEmptyFields) {
+    let content = '';
+    
+    patientsToPrint.forEach((patient, index) => {
+        content += `
+            <div class="patient-record">
+                <div class="patient-header">
+                    <h3>Patient ${index + 1}: ${escapeHtml(patient.name)}</h3>
+                    <div class="serial-number">S.No: ${index + 1}</div>
+                    <p>Visit Date: ${formatDate(patient.visitDate)}</p>
+                </div>
+                <div class="info-grid">
+                    <div>
+                        <div class="info-item"><span class="info-label">Age:</span> ${patient.age}</div>
+                        <div class="info-item"><span class="info-label">Gender:</span> ${patient.gender}</div>
+                        <div class="info-item"><span class="info-label">Phone:</span> ${patient.phone || (includeEmptyFields ? '<span class="empty-field">Not provided</span>' : '')}</div>
+                    </div>
+                    <div>
+                        <div class="info-item"><span class="info-label">Email:</span> ${patient.email || (includeEmptyFields ? '<span class="empty-field">Not provided</span>' : '')}</div>
+                        <div class="info-item"><span class="info-label">Patient ID:</span> ${patient.id || 'N/A'}</div>
+                        <div class="info-item"><span class="info-label">Recorded:</span> ${formatDate(patient.timestamp || patient.visitDate)}</div>
+                    </div>
+                </div>
+                <div class="section-title">Chief Complaint:</div>
+                <p>${escapeHtml(patient.chiefComplaint)}</p>
+                
+                ${(patient.diagnosis || includeEmptyFields) ? `
+                    <div class="section-title">Diagnosis:</div>
+                    <p>${patient.diagnosis ? escapeHtml(patient.diagnosis) : '<span class="empty-field">No diagnosis recorded</span>'}</p>
+                ` : ''}
+                
+                ${(patient.treatment || includeEmptyFields) ? `
+                    <div class="section-title">Treatment Plan:</div>
+                    <p>${patient.treatment ? escapeHtml(patient.treatment) : '<span class="empty-field">No treatment recorded</span>'}</p>
+                ` : ''}
+                
+                ${(patient.notes || includeEmptyFields) ? `
+                    <div class="section-title">Additional Notes:</div>
+                    <p>${patient.notes ? escapeHtml(patient.notes) : '<span class="empty-field">No additional notes</span>'}</p>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    return content;
+}
+
+function generateSummaryReport(patientsToPrint, includeEmptyFields) {
+    let content = '<div class="summary">';
+    
+    // Statistics
+    const ageGroups = {
+        '0-18': patientsToPrint.filter(p => p.age <= 18).length,
+        '19-35': patientsToPrint.filter(p => p.age > 18 && p.age <= 35).length,
+        '36-50': patientsToPrint.filter(p => p.age > 35 && p.age <= 50).length,
+        '51+': patientsToPrint.filter(p => p.age > 50).length
+    };
+    
+    const genderCount = {
+        'Male': patientsToPrint.filter(p => p.gender === 'Male').length,
+        'Female': patientsToPrint.filter(p => p.gender === 'Female').length,
+        'Other': patientsToPrint.filter(p => p.gender === 'Other').length
+    };
+    
+    content += `
+        <h3>Summary Statistics</h3>
+        <div class="info-grid">
+            <div>
+                <h4>Age Distribution</h4>
+                <p>0-18 years: ${ageGroups['0-18']} patients</p>
+                <p>19-35 years: ${ageGroups['19-35']} patients</p>
+                <p>36-50 years: ${ageGroups['36-50']} patients</p>
+                <p>51+ years: ${ageGroups['51+']} patients</p>
+            </div>
+            <div>
+                <h4>Gender Distribution</h4>
+                <p>Male: ${genderCount['Male']} patients</p>
+                <p>Female: ${genderCount['Female']} patients</p>
+                <p>Other: ${genderCount['Other']} patients</p>
+            </div>
+        </div>
+    `;
+    
+    content += '</div>';
+    
+    // Brief patient list
+    content += '<h3>Patient Summary</h3>';
+    patientsToPrint.forEach((patient, index) => {
+        content += `
+            <div class="patient-record">
+                <div class="patient-header">
+                    <h4>${index + 1}. ${escapeHtml(patient.name)}</h4>
+                    <div class="serial-number">S.No: ${index + 1}</div>
+                </div>
+                <div class="info-grid">
+                    <div>
+                        <div class="info-item"><span class="info-label">Visit Date:</span> ${formatDate(patient.visitDate)}</div>
+                        <div class="info-item"><span class="info-label">Age/Gender:</span> ${patient.age}/${patient.gender}</div>
+                        <div class="info-item"><span class="info-label">Contact:</span> ${patient.phone || 'Not provided'}</div>
+                    </div>
+                    <div>
+                        <div class="info-item"><span class="info-label">Chief Complaint:</span> ${escapeHtml(truncateText(patient.chiefComplaint, 100))}</div>
+                        <div class="info-item"><span class="info-label">Diagnosis:</span> ${patient.diagnosis ? escapeHtml(truncateText(patient.diagnosis, 100)) : 'Not recorded'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    return content;
+}
+
+function generateCompactReport(patientsToPrint) {
+    let content = `
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th class="serial-col">S.No</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                    <th>Chief Complaint</th>
+                    <th>Diagnosis</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    patientsToPrint.forEach((patient, index) => {
+        content += `
+            <tr>
+                <td class="serial-col">${index + 1}</td>
+                <td>${formatDate(patient.visitDate)}</td>
+                <td>${escapeHtml(patient.name)}</td>
+                <td>${patient.age}</td>
+                <td>${patient.gender}</td>
+                <td>${patient.phone || '-'}</td>
+                <td>${escapeHtml(truncateText(patient.chiefComplaint, 50))}</td>
+                <td>${patient.diagnosis ? escapeHtml(truncateText(patient.diagnosis, 50)) : '-'}</td>
+            </tr>
+        `;
+    });
+    
+    content += `
+            </tbody>
+        </table>
+    `;
+    
+    return content;
+}
+
 // Export functions for global access
 window.viewPatient = viewPatient;
 window.printPatientRecord = printPatientRecord;
 window.loadPatients = loadPatients;
+window.showPrintRangeModal = showPrintRangeModal;
+window.printDateRange = printDateRange;
