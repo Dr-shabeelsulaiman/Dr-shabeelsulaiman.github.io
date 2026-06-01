@@ -599,9 +599,20 @@ function printDateRange() {
 }
 
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
-    const printWindow = window.open('', '_blank');
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
+    
+    // Check if mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Mobile: Create downloadable HTML file
+        createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields);
+        return;
+    }
+    
+    // Desktop: Open print window
+    const printWindow = window.open('', '_blank');
     
     let content = `
         <!DOCTYPE html>
@@ -941,6 +952,239 @@ function generateCompactReport(patientsToPrint) {
     return content;
 }
 
+
+function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
+    const startDateFormatted = formatDate(startDate);
+    const endDateFormatted = formatDate(endDate);
+    
+    // Generate the same content as desktop but as a downloadable file
+    let content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Dr. Shabeel Sulaiman's Logbook - Patient Report</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                @page {
+                    size: A4;
+                    margin: 15mm;
+                }
+                
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 20px;
+                    color: #333;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    width: 210mm;
+                    box-sizing: border-box;
+                }
+                
+                .header { 
+                    text-align: center; 
+                    border-bottom: 2px solid #007bff; 
+                    padding-bottom: 15px; 
+                    margin-bottom: 20px;
+                }
+                
+                .header h1 { 
+                    color: #007bff; 
+                    margin-bottom: 8px; 
+                    font-size: 18px;
+                }
+                
+                .header p { 
+                    margin: 3px 0; 
+                    color: #666;
+                    font-size: 11px;
+                }
+                
+                .summary { 
+                    background: #f8f9fa; 
+                    padding: 12px; 
+                    border-radius: 5px; 
+                    margin-bottom: 15px;
+                    border: 1px solid #ddd;
+                }
+                
+                .patient-record { 
+                    margin-bottom: 20px; 
+                    page-break-inside: avoid; 
+                    border: 1px solid #ddd; 
+                    border-radius: 5px; 
+                    padding: 12px;
+                }
+                
+                .patient-header { 
+                    background: #007bff; 
+                    color: white; 
+                    padding: 8px 12px; 
+                    margin: -12px -12px 12px -12px; 
+                    border-radius: 5px 5px 0 0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                
+                .patient-header h3 {
+                    margin: 0;
+                    font-size: 14px;
+                }
+                
+                .serial-number {
+                    background: rgba(255,255,255,0.2);
+                    padding: 2px 8px;
+                    border-radius: 3px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }
+                
+                .info-grid { 
+                    display: grid; 
+                    grid-template-columns: 1fr 1fr; 
+                    gap: 8px; 
+                    margin-bottom: 12px;
+                }
+                
+                .info-item { 
+                    margin-bottom: 4px;
+                    font-size: 11px;
+                }
+                
+                .info-label { 
+                    font-weight: bold; 
+                    color: #555;
+                    display: inline-block;
+                    min-width: 80px;
+                }
+                
+                .section-title { 
+                    font-weight: bold; 
+                    color: #007bff; 
+                    margin-top: 12px; 
+                    margin-bottom: 4px;
+                    font-size: 12px;
+                    border-bottom: 1px solid #e9ecef;
+                    padding-bottom: 2px;
+                }
+                
+                .empty-field { 
+                    color: #999; 
+                    font-style: italic;
+                }
+                
+                .compact-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin-top: 15px;
+                    font-size: 10px;
+                }
+                
+                .compact-table th, .compact-table td { 
+                    border: 1px solid #ddd; 
+                    padding: 6px 8px; 
+                    text-align: left;
+                    vertical-align: top;
+                }
+                
+                .compact-table th { 
+                    background: #f8f9fa; 
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                
+                .compact-table .serial-col {
+                    width: 40px;
+                    text-align: center;
+                    font-weight: bold;
+                }
+                
+                .print-btn {
+                    background: #007bff;
+                    color: white;
+                    padding: 15px;
+                    border: none;
+                    border-radius: 5px;
+                    font-size: 16px;
+                    margin: 20px 0;
+                    cursor: pointer;
+                    display: block;
+                    width: 100%;
+                    text-align: center;
+                }
+                
+                .instructions {
+                    background: #e7f3ff;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin: 20px 0;
+                    border-left: 4px solid #007bff;
+                }
+                
+                @media print { 
+                    .no-print { display: none !important; }
+                    body { margin: 0; padding: 15mm; }
+                    .patient-record { page-break-inside: avoid; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Dr. Shabeel Sulaiman's Logbook</h1>
+                <p><strong>Patient Report</strong></p>
+                <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
+                <p>Generated on: ${formatDate(new Date().toISOString())}</p>
+                <p>Total Patients: ${patientsToPrint.length}</p>
+            </div>
+    `;
+    
+    if (format === 'summary') {
+        content += generateSummaryReport(patientsToPrint, includeEmptyFields);
+    } else if (format === 'compact') {
+        content += generateCompactReport(patientsToPrint);
+    } else {
+        content += generateDetailedReport(patientsToPrint, includeEmptyFields);
+    }
+    
+    content += `
+            <div class="instructions no-print">
+                <h3>📱 Mobile Instructions</h3>
+                <p><strong>To save as PDF:</strong></p>
+                <ol>
+                    <li>Click the "Print Report" button below</li>
+                    <li>In the print dialog, choose "Save as PDF" or "Print to PDF"</li>
+                    <li>Save the file to your device</li>
+                </ol>
+                <p><strong>Alternative:</strong> Use your browser's menu (⋮) → Print → Save as PDF</p>
+            </div>
+            
+            <button class="print-btn no-print" onclick="window.print()">
+                🖨️ Print Report (Save as PDF)
+            </button>
+            
+            <div class="no-print" style="margin-top: 30px; text-align: center;">
+                <p style="color: #666; font-size: 12px;">End of Report - Dr. Shabeel Sulaiman's Logbook</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    // Create blob and download
+    const blob = new Blob([content], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patient-report-${startDate}-to-${endDate}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    // Show success message
+    showSuccess('Report downloaded! Open the file and click "Print Report" to save as PDF.');
+}
 
 // Export functions for global access
 window.viewPatient = viewPatient;
