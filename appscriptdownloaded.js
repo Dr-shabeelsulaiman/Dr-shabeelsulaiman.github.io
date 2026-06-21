@@ -25,6 +25,8 @@ function initializeSheet() {
         'Procedure Date',
         'Diagnosis',
         'Procedure Done',
+        'Observed',
+        'Assisted',
         'Performed Under Supervision',
         'Independently Performed',
         'Hospital',
@@ -84,6 +86,8 @@ function addRecord(params) {
       procedureDate: params.procedureDate,
       diagnosis: params.diagnosis || '',
       procedureDone: params.procedureDone || '',
+      observed: params.observed || 'No',
+      assisted: params.assisted || 'No',
       performedUnderSupervision: params.performedUnderSupervision || 'No',
       independentlyPerformed: params.independentlyPerformed || 'No',
       hospital: params.hospital || '',
@@ -102,6 +106,8 @@ function addRecord(params) {
       recordData.procedureDate,
       recordData.diagnosis,
       recordData.procedureDone,
+      recordData.observed,
+      recordData.assisted,
       recordData.performedUnderSupervision,
       recordData.independentlyPerformed,
       recordData.hospital,
@@ -143,11 +149,13 @@ function getRecords() {
           procedureDate: data[i][7],
           diagnosis: data[i][8],
           procedureDone: data[i][9],
-          performedUnderSupervision: data[i][10],
-          independentlyPerformed: data[i][11],
-          hospital: data[i][12],
-          supervisor: data[i][13],
-          remarks: data[i][14]
+          observed: data[i][10],
+          assisted: data[i][11],
+          performedUnderSupervision: data[i][12],
+          independentlyPerformed: data[i][13],
+          hospital: data[i][14],
+          supervisor: data[i][15],
+          remarks: data[i][16]
         });
       }
     }
@@ -181,11 +189,13 @@ function getRecord(id) {
           procedureDate: data[i][7],
           diagnosis: data[i][8],
           procedureDone: data[i][9],
-          performedUnderSupervision: data[i][10],
-          independentlyPerformed: data[i][11],
-          hospital: data[i][12],
-          supervisor: data[i][13],
-          remarks: data[i][14]
+          observed: data[i][10],
+          assisted: data[i][11],
+          performedUnderSupervision: data[i][12],
+          independentlyPerformed: data[i][13],
+          hospital: data[i][14],
+          supervisor: data[i][15],
+          remarks: data[i][16]
         };
         return createResponse(true, 'Record retrieved successfully', { record: record });
       }
@@ -215,11 +225,13 @@ function updateRecord(params) {
         sheet.getRange(i + 1, 8).setValue(params.procedureDate);
         sheet.getRange(i + 1, 9).setValue(params.diagnosis || '');
         sheet.getRange(i + 1, 10).setValue(params.procedureDone || '');
-        sheet.getRange(i + 1, 11).setValue(params.performedUnderSupervision || 'No');
-        sheet.getRange(i + 1, 12).setValue(params.independentlyPerformed || 'No');
-        sheet.getRange(i + 1, 13).setValue(params.hospital || '');
-        sheet.getRange(i + 1, 14).setValue(params.supervisor || '');
-        sheet.getRange(i + 1, 15).setValue(params.remarks || '');
+        sheet.getRange(i + 1, 11).setValue(params.observed || 'No');
+        sheet.getRange(i + 1, 12).setValue(params.assisted || 'No');
+        sheet.getRange(i + 1, 13).setValue(params.performedUnderSupervision || 'No');
+        sheet.getRange(i + 1, 14).setValue(params.independentlyPerformed || 'No');
+        sheet.getRange(i + 1, 15).setValue(params.hospital || '');
+        sheet.getRange(i + 1, 16).setValue(params.supervisor || '');
+        sheet.getRange(i + 1, 17).setValue(params.remarks || '');
         
         formatRow(sheet, i + 1);
         return createResponse(true, 'Record updated successfully');
@@ -283,7 +295,7 @@ function formatRow(sheet, rowNum) {
   }
   
   // Set text wrapping for long text fields
-  sheet.getRange(rowNum, 9, 1, 7).setWrap(true); // Diagnosis through Remarks
+  sheet.getRange(rowNum, 9, 1, 9).setWrap(true); // Diagnosis through Remarks
   
   // Auto-resize columns
   sheet.autoResizeColumn(1); // ID
@@ -312,11 +324,13 @@ function setup() {
     sheet.setColumnWidth(8, 120);  // Procedure Date
     sheet.setColumnWidth(9, 250);  // Diagnosis
     sheet.setColumnWidth(10, 250); // Procedure Done
-    sheet.setColumnWidth(11, 150); // Performed Under Supervision
-    sheet.setColumnWidth(12, 150); // Independently Performed
-    sheet.setColumnWidth(13, 200); // Hospital
-    sheet.setColumnWidth(14, 200); // Supervising Consultant
-    sheet.setColumnWidth(15, 200); // Remarks
+    sheet.setColumnWidth(11, 100); // Observed
+    sheet.setColumnWidth(12, 100); // Assisted
+    sheet.setColumnWidth(13, 150); // Performed Under Supervision
+    sheet.setColumnWidth(14, 150); // Independently Performed
+    sheet.setColumnWidth(15, 200); // Hospital
+    sheet.setColumnWidth(16, 200); // Supervising Consultant
+    sheet.setColumnWidth(17, 200); // Remarks
     
     // Freeze header row
     sheet.setFrozenRows(1);
@@ -327,12 +341,14 @@ function setup() {
       .build();
     sheet.getRange(2, 6, sheet.getMaxRows() - 1, 1).setDataValidation(sexRule);
     
-    // Add data validation for supervision checkboxes
+    // Add data validation for performance status checkboxes
     const yesNoRule = SpreadsheetApp.newDataValidation()
       .requireValueInList(['Yes', 'No'])
       .build();
     sheet.getRange(2, 11, sheet.getMaxRows() - 1, 1).setDataValidation(yesNoRule);
     sheet.getRange(2, 12, sheet.getMaxRows() - 1, 1).setDataValidation(yesNoRule);
+    sheet.getRange(2, 13, sheet.getMaxRows() - 1, 1).setDataValidation(yesNoRule);
+    sheet.getRange(2, 14, sheet.getMaxRows() - 1, 1).setDataValidation(yesNoRule);
     
     Logger.log('Sheet setup completed successfully');
     return 'Sheet setup completed successfully';
@@ -353,6 +369,8 @@ function test() {
     procedureDate: '2024-06-01',
     diagnosis: 'Test diagnosis',
     procedureDone: 'Wound Dressing',
+    observed: 'Yes',
+    assisted: 'No',
     performedUnderSupervision: 'Yes',
     independentlyPerformed: 'No',
     hospital: 'Test Hospital',

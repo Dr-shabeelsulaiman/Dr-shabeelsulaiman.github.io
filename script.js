@@ -2,8 +2,8 @@
 
 // Configuration
 const CONFIG = {
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzaGLZgIuWYTF-a5JjlI_WKmCGmHGNrralOhHlQNeLbdKclPs4f1ubkMjk7OpuQhWkQjQ/exec',
-    SHEET_NAME: 'ProcedureRecords'
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx5his4SD9gBzUMm6b6jXHDMMT258tpRC58yfEPLCgVJ1ASe0olLMq67GlfEk7GQ6uT/exec',
+    SHEET_NAME: 'ProcedureRecords_v2'
 };
 
 // Global variables
@@ -166,6 +166,8 @@ function getFormData() {
         procedureDate: document.getElementById('procedureDate').value,
         diagnosis: document.getElementById('diagnosis').value.trim(),
         procedureDone: document.getElementById('procedureDone').value.trim(),
+        observed: document.getElementById('observed').checked ? 'Yes' : 'No',
+        assisted: document.getElementById('assisted').checked ? 'Yes' : 'No',
         performedUnderSupervision: document.getElementById('performedUnderSupervision').checked ? 'Yes' : 'No',
         independentlyPerformed: document.getElementById('independentlyPerformed').checked ? 'Yes' : 'No',
         hospital: document.getElementById('hospital').value.trim(),
@@ -197,6 +199,8 @@ async function saveRecordToGoogleSheets(recordData) {
             procedureDate: recordData.procedureDate,
             diagnosis: recordData.diagnosis,
             procedureDone: recordData.procedureDone,
+            observed: recordData.observed || 'No',
+            assisted: recordData.assisted || 'No',
             performedUnderSupervision: recordData.performedUnderSupervision || 'No',
             independentlyPerformed: recordData.independentlyPerformed || 'No',
             hospital: recordData.hospital || '',
@@ -327,6 +331,8 @@ function displayRecords(recordsToDisplay) {
             <td>${record.ipNumber || '-'}</td>
             <td>${truncateText(escapeHtml(record.diagnosis), 40)}</td>
             <td>${truncateText(escapeHtml(record.procedureDone || record.chiefComplaint || '-'), 40)}</td>
+            <td>${record.observed === 'Yes' ? '<i class="bi bi-check-lg text-info"></i>' : '-'}</td>
+            <td>${record.assisted === 'Yes' ? '<i class="bi bi-check-lg text-warning"></i>' : '-'}</td>
             <td>${record.performedUnderSupervision === 'Yes' ? '<i class="bi bi-check-lg text-primary"></i>' : '-'}</td>
             <td>${record.independentlyPerformed === 'Yes' ? '<i class="bi bi-check-lg text-success"></i>' : '-'}</td>
             <td>
@@ -396,13 +402,23 @@ function viewRecord(recordId) {
                 <p>${escapeHtml(record.diagnosis || 'Not recorded')}</p>
                 
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p><strong>Performed Under Supervision:</strong> 
+                    <div class="col-md-3">
+                        <p><strong>Observed:</strong> 
+                            ${record.observed === 'Yes' ? '<span class="badge bg-info">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Assisted:</strong> 
+                            ${record.assisted === 'Yes' ? '<span class="badge bg-warning">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Under Supervision:</strong> 
                             ${record.performedUnderSupervision === 'Yes' ? '<span class="badge bg-primary">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
                         </p>
                     </div>
-                    <div class="col-md-6">
-                        <p><strong>Independently Performed:</strong> 
+                    <div class="col-md-3">
+                        <p><strong>Independently:</strong> 
                             ${record.independentlyPerformed === 'Yes' ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
                         </p>
                     </div>
@@ -461,6 +477,8 @@ function printRecord(recordId) {
             <p>${escapeHtml(currentRecord.procedureDone || currentRecord.chiefComplaint || 'Not recorded')}</p>
             
             <h5>Performance Status</h5>
+            <p><strong>Observed:</strong> ${currentRecord.observed === 'Yes' ? 'Yes' : 'No'}</p>
+            <p><strong>Assisted:</strong> ${currentRecord.assisted === 'Yes' ? 'Yes' : 'No'}</p>
             <p><strong>Performed Under Supervision:</strong> ${currentRecord.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</p>
             <p><strong>Independently Performed:</strong> ${currentRecord.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</p>
             
@@ -588,6 +606,8 @@ function getMockRecords() {
             procedureDate: '2024-06-01',
             diagnosis: 'Tension headache, possible hypertension',
             procedureDone: 'Wound Dressing',
+            observed: 'Yes',
+            assisted: 'No',
             performedUnderSupervision: 'Yes',
             independentlyPerformed: 'No',
             hospital: 'City Hospital',
@@ -605,6 +625,8 @@ function getMockRecords() {
             procedureDate: '2024-05-30',
             diagnosis: 'Acute appendicitis',
             procedureDone: 'Appendectomy',
+            observed: 'No',
+            assisted: 'Yes',
             performedUnderSupervision: 'No',
             independentlyPerformed: 'Yes',
             hospital: 'Metro Medical Center',
@@ -910,9 +932,11 @@ function generateDetailedReport(patientsToPrint, includeEmptyFields) {
                 <div class="section-title">Performance Status:</div>
                 <div class="info-grid">
                     <div>
+                        <div class="info-item"><span class="info-label">Observed:</span> ${record.observed === 'Yes' ? 'Yes' : 'No'}</div>
                         <div class="info-item"><span class="info-label">Under Supervision:</span> ${record.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</div>
                     </div>
                     <div>
+                        <div class="info-item"><span class="info-label">Assisted:</span> ${record.assisted === 'Yes' ? 'Yes' : 'No'}</div>
                         <div class="info-item"><span class="info-label">Independently:</span> ${record.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</div>
                     </div>
                 </div>
@@ -955,6 +979,8 @@ function generateSummaryReport(patientsToPrint, includeEmptyFields) {
         'Other': patientsToPrint.filter(p => (p.sex || p.gender) === 'Other').length
     };
     
+    const observedCount = patientsToPrint.filter(p => p.observed === 'Yes').length;
+    const assistedCount = patientsToPrint.filter(p => p.assisted === 'Yes').length;
     const supervisionCount = patientsToPrint.filter(p => p.performedUnderSupervision === 'Yes').length;
     const independentCount = patientsToPrint.filter(p => p.independentlyPerformed === 'Yes').length;
     
@@ -973,6 +999,8 @@ function generateSummaryReport(patientsToPrint, includeEmptyFields) {
                 <p>Male: ${sexCount['Male']} records</p>
                 <p>Female: ${sexCount['Female']} records</p>
                 <p>Other: ${sexCount['Other']} records</p>
+                <p>Observed: ${observedCount}</p>
+                <p>Assisted: ${assistedCount}</p>
                 <p>Under Supervision: ${supervisionCount}</p>
                 <p>Independent: ${independentCount}</p>
             </div>
@@ -1015,14 +1043,15 @@ function generateCompactReport(patientsToPrint) {
                 <tr>
                     <th class="serial-col">S.No</th>
                     <th>Date</th>
-                    <th>Name</th>
                     <th>Age</th>
                     <th>Sex</th>
                     <th>IP No.</th>
                     <th>Diagnosis</th>
                     <th>Procedure</th>
-                    <th>Supervision</th>
-                    <th>Independent</th>
+                    <th>O</th>
+                    <th>A</th>
+                    <th>PS</th>
+                    <th>IP</th>
                 </tr>
             </thead>
             <tbody>
@@ -1033,14 +1062,15 @@ function generateCompactReport(patientsToPrint) {
             <tr>
                 <td class="serial-col">${index + 1}</td>
                 <td>${formatDate(record.procedureDate || record.visitDate)}</td>
-                <td>${escapeHtml(record.name)}</td>
                 <td>${record.age}</td>
                 <td>${record.sex || record.gender || '-'}</td>
                 <td>${record.ipNumber || '-'}</td>
                 <td>${escapeHtml(truncateText(record.diagnosis, 40))}</td>
                 <td>${escapeHtml(truncateText(record.procedureDone || record.chiefComplaint || '-', 40))}</td>
-                <td>${record.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</td>
-                <td>${record.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</td>
+                <td style="width:30px;text-align:center;vertical-align:middle;">${record.observed === 'Yes' ? '<strong>O</strong>' : ''}</td>
+                <td style="width:30px;text-align:center;vertical-align:middle;">${record.assisted === 'Yes' ? '<strong>A</strong>' : ''}</td>
+                <td style="width:30px;text-align:center;vertical-align:middle;">${record.performedUnderSupervision === 'Yes' ? '<strong>PS</strong>' : ''}</td>
+                <td style="width:30px;text-align:center;vertical-align:middle;">${record.independentlyPerformed === 'Yes' ? '<strong>IP</strong>' : ''}</td>
             </tr>
         `;
     });
