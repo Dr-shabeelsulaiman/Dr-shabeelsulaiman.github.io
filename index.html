@@ -65,6 +65,9 @@
                 opt.value = p;
                 list.appendChild(opt);
             });
+            // Clear search input when switching category
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.value = '';
             if (typeof loadRecords === 'function') loadRecords();
         }
         
@@ -391,8 +394,17 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p id="printCategoryNote" class="text-muted small mb-3"></p>
                     <form id="printRangeForm">
+                        <div class="mb-3">
+                            <label for="printCategory" class="form-label">
+                                <i class="bi bi-tag me-1"></i>Procedure Category
+                            </label>
+                            <select class="form-select" id="printCategory">
+                                <option value="Major">Major Procedures</option>
+                                <option value="Minor">Minor Procedures</option>
+                                <option value="All">All Procedures</option>
+                            </select>
+                        </div>
                         <div class="mb-3">
                             <label for="printStartDate" class="form-label">
                                 <i class="bi bi-calendar-event me-1"></i>Start Date

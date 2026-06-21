@@ -297,7 +297,10 @@ function displayRecords(recordsToDisplay) {
     // Filter by current category if one is selected
     const currentCategory = sessionStorage.getItem('logbookCategory');
     if (currentCategory) {
-        recordsToDisplay = recordsToDisplay.filter(r => r.category === currentCategory);
+        recordsToDisplay = recordsToDisplay.filter(r => {
+            const recCat = (r.category || '').toString().trim();
+            return recCat === currentCategory;
+        });
     }
     
     if (recordsToDisplay.length === 0) {
@@ -342,7 +345,10 @@ function filterRecords(searchTerm) {
     const currentCategory = sessionStorage.getItem('logbookCategory');
     let pool = records;
     if (currentCategory) {
-        pool = records.filter(r => r.category === currentCategory);
+        pool = records.filter(r => {
+            const recCat = (r.category || '').toString().trim();
+            return recCat === currentCategory;
+        });
     }
     
     const filtered = pool.filter(record => {
@@ -621,13 +627,11 @@ function showPrintRangeModal() {
     document.getElementById('printEndDate').value = endDate.toISOString().split('T')[0];
     document.getElementById('printStartDate').value = startDate.toISOString().split('T')[0];
     
-    // Show current category in modal
+    // Set category dropdown to current session category
     const currentCategory = sessionStorage.getItem('logbookCategory');
-    const note = document.getElementById('printCategoryNote');
-    if (note && currentCategory) {
-        note.innerHTML = `<i class="bi bi-tag me-1"></i>Only <strong>${currentCategory}</strong> procedure records will be included in this report.`;
-    } else if (note) {
-        note.textContent = '';
+    const catSelect = document.getElementById('printCategory');
+    if (catSelect && currentCategory) {
+        catSelect.value = currentCategory;
     }
     
     modal.show();
@@ -638,6 +642,7 @@ function printDateRange() {
     const endDate = document.getElementById('printEndDate').value;
     const format = document.getElementById('printFormat').value;
     const includeEmptyFields = document.getElementById('includeEmptyFields').checked;
+    const selectedCategory = document.getElementById('printCategory').value;
     
     if (!startDate || !endDate) {
         showError('Please select both start and end dates');
@@ -649,18 +654,17 @@ function printDateRange() {
         return;
     }
     
-    // Filter records by date range and current category
-    const currentCategory = sessionStorage.getItem('logbookCategory');
+    // Filter records by date range and selected category
     const filteredRecords = records.filter(record => {
         const visitDate = new Date(record.procedureDate || record.visitDate);
         const inRange = visitDate >= new Date(startDate) && visitDate <= new Date(endDate + 'T23:59:59');
-        const matchesCategory = !currentCategory || record.category === currentCategory;
+        const matchesCategory = selectedCategory === 'All' || record.category === selectedCategory;
         return inRange && matchesCategory;
     });
     
     if (filteredRecords.length === 0) {
-        const cat = sessionStorage.getItem('logbookCategory');
-        showError(`No ${cat ? cat.toLowerCase() + ' ' : ''}records found in the selected date range`);
+        const catLabel = selectedCategory === 'All' ? '' : selectedCategory.toLowerCase() + ' ';
+        showError(`No ${catLabel}records found in the selected date range`);
         return;
     }
     
@@ -668,19 +672,20 @@ function printDateRange() {
     bootstrap.Modal.getInstance(document.getElementById('printRangeModal')).hide();
     
     // Generate print content
-    generatePrintReport(filteredRecords, startDate, endDate, format, includeEmptyFields);
+    generatePrintReport(filteredRecords, startDate, endDate, format, includeEmptyFields, selectedCategory);
 }
 
-function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
+function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory) {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
+    const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
     
     // Check if mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
         // Mobile: Create downloadable HTML file
-        createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields);
+        createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory);
         return;
     }
     
@@ -691,7 +696,7 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Dr. Shabeel Sulaiman's Logbook - Procedure Report</title>
+            <title>Dr. Shabeel Sulaiman's Logbook - ${catLabel} Procedure Report</title>
             <style>
                 @page {
                     size: A4;
@@ -838,7 +843,7 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
         <body>
             <div class="header">
                 <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>${sessionStorage.getItem('logbookCategory') || ''} Procedure Report</strong></p>
+                <p><strong>${catLabel} Procedure Report</strong></p>
                 <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
                 <p>Generated on: ${formatDate(new Date().toISOString())}</p>
                 <p>Total Records: ${patientsToPrint.length}</p>
@@ -1049,16 +1054,17 @@ function generateCompactReport(patientsToPrint) {
 }
 
 
-function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
+function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory) {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
+    const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
     
     // Generate the same content as desktop but as a downloadable file
     let content = `
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Dr. Shabeel Sulaiman's Logbook - Procedure Report</title>
+            <title>Dr. Shabeel Sulaiman's Logbook - ${catLabel} Procedure Report</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
@@ -1229,7 +1235,7 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
         <body>
             <div class="header">
                 <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>${sessionStorage.getItem('logbookCategory') || ''} Procedure Report</strong></p>
+                <p><strong>${catLabel} Procedure Report</strong></p>
                 <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
                 <p>Generated on: ${formatDate(new Date().toISOString())}</p>
                 <p>Total Records: ${patientsToPrint.length}</p>
