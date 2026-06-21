@@ -171,7 +171,6 @@ function getFormData() {
         performedUnderSupervision: document.getElementById('performedUnderSupervision').checked ? 'Yes' : 'No',
         independentlyPerformed: document.getElementById('independentlyPerformed').checked ? 'Yes' : 'No',
         hospital: document.getElementById('hospital').value.trim(),
-        supervisor: document.getElementById('supervisor').value.trim(),
         remarks: document.getElementById('remarks').value.trim()
     };
 }
