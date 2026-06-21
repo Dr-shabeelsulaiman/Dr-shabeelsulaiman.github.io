@@ -294,9 +294,19 @@ function displayRecords(recordsToDisplay) {
     
     if (!tableBody) return;
     
+    // Filter by current category if one is selected
+    const currentCategory = sessionStorage.getItem('logbookCategory');
+    if (currentCategory) {
+        recordsToDisplay = recordsToDisplay.filter(r => r.category === currentCategory);
+    }
+    
     if (recordsToDisplay.length === 0) {
         tableBody.innerHTML = '';
-        if (noRecords) noRecords.style.display = 'block';
+        if (noRecords) {
+            noRecords.style.display = 'block';
+            const msg = noRecords.querySelector('p');
+            if (msg && currentCategory) msg.textContent = `No ${currentCategory.toLowerCase()} procedure records found`;
+        }
         return;
     }
     
@@ -329,7 +339,13 @@ function displayRecords(recordsToDisplay) {
 }
 
 function filterRecords(searchTerm) {
-    const filtered = records.filter(record => {
+    const currentCategory = sessionStorage.getItem('logbookCategory');
+    let pool = records;
+    if (currentCategory) {
+        pool = records.filter(r => r.category === currentCategory);
+    }
+    
+    const filtered = pool.filter(record => {
         return record.name.toLowerCase().includes(searchTerm) ||
                (record.ipNumber || '').toLowerCase().includes(searchTerm) ||
                (record.diagnosis || '').toLowerCase().includes(searchTerm) ||
@@ -605,6 +621,15 @@ function showPrintRangeModal() {
     document.getElementById('printEndDate').value = endDate.toISOString().split('T')[0];
     document.getElementById('printStartDate').value = startDate.toISOString().split('T')[0];
     
+    // Show current category in modal
+    const currentCategory = sessionStorage.getItem('logbookCategory');
+    const note = document.getElementById('printCategoryNote');
+    if (note && currentCategory) {
+        note.innerHTML = `<i class="bi bi-tag me-1"></i>Only <strong>${currentCategory}</strong> procedure records will be included in this report.`;
+    } else if (note) {
+        note.textContent = '';
+    }
+    
     modal.show();
 }
 
@@ -624,14 +649,18 @@ function printDateRange() {
         return;
     }
     
-    // Filter records by date range
+    // Filter records by date range and current category
+    const currentCategory = sessionStorage.getItem('logbookCategory');
     const filteredRecords = records.filter(record => {
         const visitDate = new Date(record.procedureDate || record.visitDate);
-        return visitDate >= new Date(startDate) && visitDate <= new Date(endDate + 'T23:59:59');
+        const inRange = visitDate >= new Date(startDate) && visitDate <= new Date(endDate + 'T23:59:59');
+        const matchesCategory = !currentCategory || record.category === currentCategory;
+        return inRange && matchesCategory;
     });
     
     if (filteredRecords.length === 0) {
-        showError('No records found in the selected date range');
+        const cat = sessionStorage.getItem('logbookCategory');
+        showError(`No ${cat ? cat.toLowerCase() + ' ' : ''}records found in the selected date range`);
         return;
     }
     
@@ -809,7 +838,7 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
         <body>
             <div class="header">
                 <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>Procedure Report</strong></p>
+                <p><strong>${sessionStorage.getItem('logbookCategory') || ''} Procedure Report</strong></p>
                 <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
                 <p>Generated on: ${formatDate(new Date().toISOString())}</p>
                 <p>Total Records: ${patientsToPrint.length}</p>
@@ -1200,7 +1229,7 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
         <body>
             <div class="header">
                 <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>Procedure Report</strong></p>
+                <p><strong>${sessionStorage.getItem('logbookCategory') || ''} Procedure Report</strong></p>
                 <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
                 <p>Generated on: ${formatDate(new Date().toISOString())}</p>
                 <p>Total Records: ${patientsToPrint.length}</p>
