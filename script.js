@@ -701,6 +701,7 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
     const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
+    const logoUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) + 'logo.jpg';
     
     // Check if mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -718,11 +719,17 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Dr. Shabeel Sulaiman's Logbook - ${catLabel} Procedure Report</title>
+            <title>Procedure Report</title>
             <style>
                 @page {
                     size: A4;
                     margin: 15mm;
+                    @top-left { content: none; }
+                    @top-center { content: none; }
+                    @top-right { content: none; }
+                    @bottom-left { content: none; }
+                    @bottom-center { content: none; }
+                    @bottom-right { content: none; }
                 }
                 
                 body { 
@@ -736,21 +743,50 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
                     box-sizing: border-box;
                 }
                 
-                .header { 
-                    text-align: center; 
-                    border-bottom: 2px solid #007bff; 
-                    padding-bottom: 15px; 
+                .report-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 20px;
+                    border-bottom: 2px solid #007bff;
+                    padding-bottom: 15px;
                     margin-bottom: 20px;
                 }
                 
-                .header h1 { 
-                    color: #007bff; 
-                    margin-bottom: 8px; 
-                    font-size: 18px;
+                .report-header img {
+                    height: 70px;
+                    width: auto;
+                    max-width: 120px;
+                    object-fit: contain;
                 }
                 
-                .header p { 
-                    margin: 3px 0; 
+                .report-header .header-text {
+                    text-align: center;
+                }
+                
+                .report-header .header-text h1 {
+                    color: #007bff;
+                    margin: 0 0 4px 0;
+                    font-size: 16px;
+                }
+                
+                .report-header .header-text h2 {
+                    color: #333;
+                    margin: 0 0 4px 0;
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+                
+                .report-header .header-text h3 {
+                    color: #555;
+                    margin: 0 0 4px 0;
+                    font-size: 12px;
+                    font-weight: bold;
+                    font-style: italic;
+                }
+                
+                .report-header .header-text p {
+                    margin: 2px 0;
                     color: #666;
                     font-size: 11px;
                 }
@@ -839,8 +875,8 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
                 .compact-table th, .compact-table td { 
                     border: 1px solid #ddd; 
                     padding: 6px 8px; 
-                    text-align: left;
-                    vertical-align: top;
+                    text-align: center;
+                    vertical-align: middle;
                 }
                 
                 .compact-table th { 
@@ -863,12 +899,15 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>${catLabel} Procedure Report</strong></p>
-                <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
-                <p>Generated on: ${formatDate(new Date().toISOString())}</p>
-                <p>Total Records: ${patientsToPrint.length}</p>
+            <div class="report-header">
+                <img src="${logoUrl}" alt="Logo">
+                <div class="header-text">
+                    <h1>Govt Medical College Thrissur</h1>
+                    <h2>Department of Urology</h2>
+                    <h3>Logbook of Dr. Shabeel Sulaiman</h3>
+                    <p><strong>${catLabel} Procedure Report</strong></p>
+                    <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Generated: ${formatDate(new Date().toISOString())} | Total: ${patientsToPrint.length}</p>
+                </div>
             </div>
     `;
     
@@ -1088,19 +1127,26 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
     const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
+    const logoUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) + 'logo.jpg';
     
     // Generate the same content as desktop but as a downloadable file
     let content = `
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Dr. Shabeel Sulaiman's Logbook - ${catLabel} Procedure Report</title>
+            <title>Procedure Report</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
                 @page {
                     size: A4;
                     margin: 15mm;
+                    @top-left { content: none; }
+                    @top-center { content: none; }
+                    @top-right { content: none; }
+                    @bottom-left { content: none; }
+                    @bottom-center { content: none; }
+                    @bottom-right { content: none; }
                 }
                 
                 body { 
@@ -1114,21 +1160,50 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
                     box-sizing: border-box;
                 }
                 
-                .header { 
-                    text-align: center; 
-                    border-bottom: 2px solid #007bff; 
-                    padding-bottom: 15px; 
+                .report-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 20px;
+                    border-bottom: 2px solid #007bff;
+                    padding-bottom: 15px;
                     margin-bottom: 20px;
                 }
                 
-                .header h1 { 
-                    color: #007bff; 
-                    margin-bottom: 8px; 
-                    font-size: 18px;
+                .report-header img {
+                    height: 70px;
+                    width: auto;
+                    max-width: 120px;
+                    object-fit: contain;
                 }
                 
-                .header p { 
-                    margin: 3px 0; 
+                .report-header .header-text {
+                    text-align: center;
+                }
+                
+                .report-header .header-text h1 {
+                    color: #007bff;
+                    margin: 0 0 4px 0;
+                    font-size: 16px;
+                }
+                
+                .report-header .header-text h2 {
+                    color: #333;
+                    margin: 0 0 4px 0;
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+                
+                .report-header .header-text h3 {
+                    color: #555;
+                    margin: 0 0 4px 0;
+                    font-size: 12px;
+                    font-weight: bold;
+                    font-style: italic;
+                }
+                
+                .report-header .header-text p {
+                    margin: 2px 0;
                     color: #666;
                     font-size: 11px;
                 }
@@ -1217,8 +1292,8 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
                 .compact-table th, .compact-table td { 
                     border: 1px solid #ddd; 
                     padding: 6px 8px; 
-                    text-align: left;
-                    vertical-align: top;
+                    text-align: center;
+                    vertical-align: middle;
                 }
                 
                 .compact-table th { 
@@ -1263,12 +1338,15 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>${catLabel} Procedure Report</strong></p>
-                <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
-                <p>Generated on: ${formatDate(new Date().toISOString())}</p>
-                <p>Total Records: ${patientsToPrint.length}</p>
+            <div class="report-header">
+                <img src="${logoUrl}" alt="Logo">
+                <div class="header-text">
+                    <h1>Govt Medical College Thrissur</h1>
+                    <h2>Department of Urology</h2>
+                    <h3>Logbook of Dr. Shabeel Sulaiman</h3>
+                    <p><strong>${catLabel} Procedure Report</strong></p>
+                    <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Generated: ${formatDate(new Date().toISOString())} | Total: ${patientsToPrint.length}</p>
+                </div>
             </div>
     `;
     
@@ -1282,14 +1360,15 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
     
     content += `
             <div class="instructions no-print">
-                <h3>📱 Mobile Instructions</h3>
+                <h3>Mobile Instructions</h3>
                 <p><strong>To save as PDF:</strong></p>
                 <ol>
                     <li>Click the "Print Report" button below</li>
                     <li>In the print dialog, choose "Save as PDF" or "Print to PDF"</li>
+                    <li>Uncheck "Headers and footers" in print settings (to remove page title/URL)</li>
                     <li>Save the file to your device</li>
                 </ol>
-                <p><strong>Alternative:</strong> Use your browser's menu (⋮) → Print → Save as PDF</p>
+                <p><strong>Alternative:</strong> Use your browser's menu (&#x22EE;) &rarr; Print &rarr; Save as PDF</p>
             </div>
             
             <button class="print-btn no-print" onclick="window.print()">
