@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dr. Shabeel Sulaiman's Logbook - Patient Management System</title>
+    <title>Dr. Shabeel Sulaiman's Logbook - Surgical Procedure Log</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -25,6 +25,7 @@
         // Logout function
         function logout() {
             sessionStorage.removeItem('authenticated');
+            sessionStorage.removeItem('logbookCategory');
             window.location.href = 'login.html';
         }
         
@@ -34,7 +35,75 @@
                 window.location.href = 'login.html';
             }
         });
+        
+        // Category selection
+        function selectCategory(category) {
+            sessionStorage.setItem('logbookCategory', category);
+            const modalEl = document.getElementById('categoryModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            applyCategory(category);
+        }
+        
+        function changeCategory() {
+            const modalEl = document.getElementById('categoryModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+        
+        function applyCategory(category) {
+            document.getElementById('category').value = category;
+            document.querySelectorAll('.category-label').forEach(el => el.textContent = category + ' Procedure');
+            document.getElementById('categoryBadge').classList.remove('d-none');
+            document.getElementById('categoryText').textContent = category + ' Procedures';
+            // Update procedure datalist
+            const list = document.getElementById('procedureList');
+            list.innerHTML = '';
+            const procedures = category === 'Minor' ? MINOR_PROCEDURES : MAJOR_PROCEDURES;
+            procedures.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                list.appendChild(opt);
+            });
+            if (typeof loadRecords === 'function') loadRecords();
+        }
+        
+        const MINOR_PROCEDURES = [
+            'Wound Dressing','Suture Removal','Incision & Drainage','Biopsy','Catheterization',
+            'Lumbar Puncture','Thoracocentesis','Paracentesis','FNAC','Skin Biopsy',
+            'Nail Avulsion','Debridement','Cauterization','Cryotherapy','Excision of Small Lesion'
+        ];
+        const MAJOR_PROCEDURES = [
+            'Appendectomy','Cholecystectomy','Hernia Repair','Laparotomy','Thyroidectomy',
+            'Mastectomy','Hemicolectomy','Gastrectomy','Nephrectomy','Splenectomy',
+            'Bowel Resection','Exploratory Laparotomy','Liver Resection','Pancreatectomy','Vascular Bypass'
+        ];
     </script>
+    
+    <!-- Category Selector Modal -->
+    <div class="modal fade" id="categoryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clipboard2-pulse me-2"></i>
+                        Select Procedure Category
+                    </h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-4">Please select the type of procedure you want to log:</p>
+                    <div class="d-grid gap-3 col-8 mx-auto">
+                        <button class="btn btn-outline-primary btn-lg" onclick="selectCategory('Minor')">
+                            <i class="bi bi-bandaid me-2"></i>Minor Procedure
+                        </button>
+                        <button class="btn btn-outline-danger btn-lg" onclick="selectCategory('Major')">
+                            <i class="bi bi-heart-pulse me-2"></i>Major Procedure
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -43,24 +112,32 @@
                 <i class="bi bi-clipboard2-pulse me-2"></i>
                 Dr. Shabeel Sulaiman's Logbook
             </a>
+            <span id="categoryBadge" class="badge bg-warning text-dark fs-6 d-none">
+                <i class="bi bi-tag me-1"></i><span id="categoryText"></span>
+            </span>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#add-patient">
-                            <i class="bi bi-person-plus me-1"></i>Add Patient
+                        <a class="nav-link active" href="#add-procedure">
+                            <i class="bi bi-person-plus me-1"></i>Add Procedure
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#patient-records">
+                        <a class="nav-link" href="#procedure-records">
                             <i class="bi bi-people me-1"></i>Records
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#" onclick="showPrintRangeModal()">
                             <i class="bi bi-printer me-1"></i>Print Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="changeCategory()">
+                            <i class="bi bi-arrow-repeat me-1"></i>Switch Category
                         </a>
                     </li>
                     <li class="nav-item">
@@ -74,20 +151,22 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container mt-4">
-        <!-- Add Patient Section -->
-        <section id="add-patient" class="mb-5">
+    <div class="container mt-4" id="mainContent">
+        <!-- Add Procedure Section -->
+        <section id="add-procedure" class="mb-5">
             <div class="row">
                 <div class="col-lg-8 mx-auto">
                     <div class="card shadow patient-record">
                         <div class="card-header bg-success text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-person-plus-fill me-2"></i>
-                                Add New Patient
+                                Add New <span class="category-label">Procedure</span>
                             </h5>
                         </div>
                         <div class="card-body">
-                            <form id="patientForm">
+                            <form id="procedureForm">
+                                <input type="hidden" id="category" name="category" value="">
+                                
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="patientName" class="form-label">
@@ -105,64 +184,89 @@
                                 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label for="patientGender" class="form-label">
-                                            <i class="bi bi-gender me-1"></i>Gender *
+                                        <label for="patientSex" class="form-label">
+                                            <i class="bi bi-gender me-1"></i>Sex *
                                         </label>
-                                        <select class="form-select" id="patientGender" required>
-                                            <option value="">Select Gender</option>
+                                        <select class="form-select" id="patientSex" required>
+                                            <option value="">Select Sex</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
                                             <option value="Other">Other</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label for="patientPhone" class="form-label">
-                                            <i class="bi bi-telephone me-1"></i>Phone Number
+                                        <label for="ipNumber" class="form-label">
+                                            <i class="bi bi-hash me-1"></i>IP No. *
                                         </label>
-                                        <input type="tel" class="form-control" id="patientPhone">
+                                        <input type="text" class="form-control" id="ipNumber" required placeholder="Inpatient Number">
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="patientEmail" class="form-label">
-                                        <i class="bi bi-envelope me-1"></i>Email
+                                    <label for="procedureDate" class="form-label">
+                                        <i class="bi bi-calendar-check me-1"></i>Procedure Date *
                                     </label>
-                                    <input type="email" class="form-control" id="patientEmail">
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="visitDate" class="form-label">
-                                        <i class="bi bi-calendar-check me-1"></i>Visit Date *
-                                    </label>
-                                    <input type="date" class="form-control" id="visitDate" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="chiefComplaint" class="form-label">
-                                        <i class="bi bi-chat-left-text me-1"></i>Chief Complaint *
-                                    </label>
-                                    <textarea class="form-control" id="chiefComplaint" rows="3" required></textarea>
+                                    <input type="date" class="form-control" id="procedureDate" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="diagnosis" class="form-label">
-                                        <i class="bi bi-clipboard2-pulse me-1"></i>Diagnosis
+                                        <i class="bi bi-clipboard2-pulse me-1"></i>Diagnosis *
                                     </label>
-                                    <textarea class="form-control" id="diagnosis" rows="3"></textarea>
+                                    <textarea class="form-control" id="diagnosis" rows="2" required></textarea>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="treatment" class="form-label">
-                                        <i class="bi bi-prescription me-1"></i>Treatment Plan
+                                    <label for="procedureDone" class="form-label">
+                                        <i class="bi bi-activity me-1"></i>Procedure Done *
                                     </label>
-                                    <textarea class="form-control" id="treatment" rows="3"></textarea>
+                                    <input type="text" class="form-control" id="procedureDone" list="procedureList" required placeholder="Enter procedure name">
+                                    <datalist id="procedureList"></datalist>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="notes" class="form-label">
-                                        <i class="bi bi-journal-text me-1"></i>Additional Notes
+                                    <label class="form-label">
+                                        <i class="bi bi-check2-square me-1"></i>Performance Status <small class="text-muted">(Select all that apply)</small>
                                     </label>
-                                    <textarea class="form-control" id="notes" rows="2"></textarea>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="form-check border rounded p-3">
+                                                <input class="form-check-input" type="checkbox" id="performedUnderSupervision" value="yes">
+                                                <label class="form-check-label fw-bold" for="performedUnderSupervision">
+                                                    <i class="bi bi-person-check me-1 text-primary"></i>Performed Under Supervision
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check border rounded p-3">
+                                                <input class="form-check-input" type="checkbox" id="independentlyPerformed" value="yes">
+                                                <label class="form-check-label fw-bold" for="independentlyPerformed">
+                                                    <i class="bi bi-person-check-fill me-1 text-success"></i>Independently Performed
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="hospital" class="form-label">
+                                        <i class="bi bi-hospital me-1"></i>Hospital / Institution
+                                    </label>
+                                    <input type="text" class="form-control" id="hospital">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="supervisor" class="form-label">
+                                        <i class="bi bi-person-badge me-1"></i>Supervising Consultant
+                                    </label>
+                                    <input type="text" class="form-control" id="supervisor">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="remarks" class="form-label">
+                                        <i class="bi bi-journal-text me-1"></i>Remarks / Additional Notes
+                                    </label>
+                                    <textarea class="form-control" id="remarks" rows="2"></textarea>
                                 </div>
 
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -170,7 +274,7 @@
                                         <i class="bi bi-arrow-clockwise me-1"></i>Reset
                                     </button>
                                     <button type="submit" class="btn btn-success">
-                                        <i class="bi bi-save me-1"></i>Save Patient
+                                        <i class="bi bi-save me-1"></i>Save Procedure
                                     </button>
                                 </div>
                             </form>
@@ -180,48 +284,51 @@
             </div>
         </section>
 
-        <!-- Patient Records Section -->
-        <section id="patient-records" class="mb-5">
+        <!-- Procedure Records Section -->
+        <section id="procedure-records" class="mb-5">
             <div class="row">
                 <div class="col-12">
                     <div class="card shadow patient-record">
                         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="bi bi-people-fill me-2"></i>
-                                Patient Records
+                                <span class="category-label">Procedure</span> Records
                             </h5>
                             <div class="d-flex gap-2 flex-wrap flex-md-nowrap">
                                 <div class="search-container">
                                     <i class="bi bi-search search-icon d-none d-md-block"></i>
-                                    <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search patients..." autocomplete="off">
+                                    <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search records..." autocomplete="off">
                                 </div>
-                                <button class="btn btn-light btn-sm flex-shrink-0" onclick="loadPatients()">
+                                <button class="btn btn-light btn-sm flex-shrink-0" onclick="loadRecords()">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-hover" id="patientsTable">
+                                <table class="table table-hover" id="recordsTable">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Date</th>
                                             <th>Name</th>
                                             <th>Age</th>
-                                            <th>Gender</th>
-                                            <th>Phone</th>
-                                            <th>Complaint</th>
+                                            <th>Sex</th>
+                                            <th>IP No.</th>
+                                            <th>Diagnosis</th>
+                                            <th>Procedure Done</th>
+                                            <th>Supervision</th>
+                                            <th>Independent</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="patientsTableBody">
-                                        <!-- Patient records will be loaded here -->
+                                    <tbody id="recordsTableBody">
+                                        <!-- Records will be loaded here -->
                                     </tbody>
                                 </table>
                             </div>
                             <div id="noRecords" class="text-center text-muted py-4" style="display: none;">
                                 <i class="bi bi-inbox fs-1"></i>
-                                <p class="mt-2">No patient records found</p>
+                                <p class="mt-2">No procedure records found</p>
                             </div>
                         </div>
                     </div>
@@ -241,7 +348,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p id="successMessage">Patient record saved successfully!</p>
+                    <p id="successMessage">Procedure record saved successfully!</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
@@ -250,22 +357,22 @@
         </div>
     </div>
 
-    <!-- Patient Details Modal -->
-    <div class="modal fade" id="patientModal" tabindex="-1">
+    <!-- Procedure Details Modal -->
+    <div class="modal fade" id="procedureModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
-                        <i class="bi bi-person-badge me-2"></i>Patient Details
+                        <i class="bi bi-person-badge me-2"></i>Procedure Details
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="patientDetails">
-                    <!-- Patient details will be loaded here -->
+                <div class="modal-body" id="procedureDetails">
+                    <!-- Procedure details will be loaded here -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="printPatientRecord()">
+                    <button type="button" class="btn btn-primary" onclick="printRecord()">
                         <i class="bi bi-printer me-1"></i>Print Record
                     </button>
                 </div>
@@ -329,5 +436,19 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JavaScript -->
     <script src="script.js"></script>
+    <script>
+        // Initialize category on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('procedureDate').valueAsDate = new Date();
+            const savedCategory = sessionStorage.getItem('logbookCategory');
+            if (savedCategory) {
+                applyCategory(savedCategory);
+            } else {
+                const modalEl = document.getElementById('categoryModal');
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        });
+    </script>
 </body>
 </html>

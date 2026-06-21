@@ -160,7 +160,7 @@ body {
     .navbar,
     .btn,
     .modal-footer,
-    #add-patient {
+    #add-procedure {
         display: none !important;
     }
     

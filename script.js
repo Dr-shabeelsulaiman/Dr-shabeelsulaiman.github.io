@@ -2,13 +2,13 @@
 
 // Configuration
 const CONFIG = {
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzaGLZgIuWYTF-a5JjlI_WKmCGmHGNrralOhHlQNeLbdKclPs4f1ubkMjk7OpuQhWkQjQ/exec', // Your deployed Apps Script URL - properly configured!
-    SHEET_NAME: 'PatientRecords'
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzaGLZgIuWYTF-a5JjlI_WKmCGmHGNrralOhHlQNeLbdKclPs4f1ubkMjk7OpuQhWkQjQ/exec',
+    SHEET_NAME: 'ProcedureRecords'
 };
 
 // Global variables
-let patients = [];
-let currentPatient = null;
+let records = [];
+let currentRecord = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -17,10 +17,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeApp() {
     // Set today's date as default
-    document.getElementById('visitDate').valueAsDate = new Date();
+    const dateEl = document.getElementById('procedureDate');
+    if (dateEl) dateEl.valueAsDate = new Date();
     
-    // Load existing patients
-    loadPatients();
+    // Load existing records
+    loadRecords();
     
     // Setup event listeners
     setupEventListeners();
@@ -31,7 +32,8 @@ function initializeApp() {
 
 function setupEventListeners() {
     // Form submission
-    document.getElementById('patientForm').addEventListener('submit', handleFormSubmit);
+    const form = document.getElementById('procedureForm');
+    if (form) form.addEventListener('submit', handleFormSubmit);
     
     // Navigation smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -92,63 +94,62 @@ async function handleFormSubmit(event) {
         showLoading(true);
         
         // Save to Google Sheets
-        const result = await savePatientToGoogleSheets(formData);
+        const result = await saveRecordToGoogleSheets(formData);
         
         if (result.success) {
             // Add to local array
-            patients.push({
+            records.push({
                 ...formData,
                 id: result.id || Date.now().toString(),
                 timestamp: new Date().toISOString()
             });
             
             // Reset form
-            document.getElementById('patientForm').reset();
-            document.getElementById('visitDate').valueAsDate = new Date();
+            const form = document.getElementById('procedureForm');
+            if (form) form.reset();
+            const dateEl = document.getElementById('procedureDate');
+            if (dateEl) dateEl.valueAsDate = new Date();
+            // Re-apply category after reset
+            const cat = sessionStorage.getItem('logbookCategory');
+            if (cat) document.getElementById('category').value = cat;
             
             // Show success message
-            showSuccess('Patient record saved successfully!');
+            showSuccess('Procedure record saved successfully!');
             
             // Refresh table
-            loadPatients();
+            loadRecords();
         } else {
             console.error('Save failed with result:', result);
             const errorMsg = result.error || result.message || 'Unknown error occurred';
-            showError(`Failed to save patient record: ${errorMsg}`);
+            showError(`Failed to save procedure record: ${errorMsg}`);
         }
     } catch (error) {
-        console.error('Error saving patient:', error);
-        showError('An error occurred while saving the patient record.');
+        console.error('Error saving record:', error);
+        showError('An error occurred while saving the procedure record.');
     } finally {
         showLoading(false);
     }
 }
 
 function validateForm() {
-    const form = document.getElementById('patientForm');
+    const form = document.getElementById('procedureForm');
+    if (!form) return false;
     const requiredFields = form.querySelectorAll('[required]');
     
     for (let field of requiredFields) {
         if (!field.value.trim()) {
             field.focus();
-            showError(`Please fill in the ${field.previousElementSibling.textContent.replace('*', '').trim()} field.`);
+            const label = field.previousElementSibling ? field.previousElementSibling.textContent.replace('*', '').trim() : 'required';
+            showError(`Please fill in the ${label} field.`);
             return false;
         }
     }
     
-    // Validate email if provided
-    const email = document.getElementById('patientEmail').value;
-    if (email && !isValidEmail(email)) {
-        document.getElementById('patientEmail').focus();
-        showError('Please enter a valid email address.');
-        return false;
-    }
-    
-    // Validate phone if provided
-    const phone = document.getElementById('patientPhone').value;
-    if (phone && !isValidPhone(phone)) {
-        document.getElementById('patientPhone').focus();
-        showError('Please enter a valid phone number.');
+    // Ensure category is selected
+    const category = document.getElementById('category').value;
+    if (!category) {
+        showError('Please select a procedure category (Minor or Major).');
+        changeCategory();
         return false;
     }
     
@@ -157,22 +158,25 @@ function validateForm() {
 
 function getFormData() {
     return {
+        category: document.getElementById('category').value,
         name: document.getElementById('patientName').value.trim(),
         age: parseInt(document.getElementById('patientAge').value),
-        gender: document.getElementById('patientGender').value,
-        phone: document.getElementById('patientPhone').value.trim(),
-        email: document.getElementById('patientEmail').value.trim(),
-        visitDate: document.getElementById('visitDate').value,
-        chiefComplaint: document.getElementById('chiefComplaint').value.trim(),
+        sex: document.getElementById('patientSex').value,
+        ipNumber: document.getElementById('ipNumber').value.trim(),
+        procedureDate: document.getElementById('procedureDate').value,
         diagnosis: document.getElementById('diagnosis').value.trim(),
-        treatment: document.getElementById('treatment').value.trim(),
-        notes: document.getElementById('notes').value.trim()
+        procedureDone: document.getElementById('procedureDone').value.trim(),
+        performedUnderSupervision: document.getElementById('performedUnderSupervision').checked ? 'Yes' : 'No',
+        independentlyPerformed: document.getElementById('independentlyPerformed').checked ? 'Yes' : 'No',
+        hospital: document.getElementById('hospital').value.trim(),
+        supervisor: document.getElementById('supervisor').value.trim(),
+        remarks: document.getElementById('remarks').value.trim()
     };
 }
 
-async function savePatientToGoogleSheets(patientData) {
+async function saveRecordToGoogleSheets(recordData) {
     try {
-        console.log('Attempting to save patient:', patientData);
+        console.log('Attempting to save record:', recordData);
         console.log('Using Script URL:', CONFIG.SCRIPT_URL);
         console.log('Current origin:', window.location.origin);
         
@@ -184,17 +188,20 @@ async function savePatientToGoogleSheets(patientData) {
         
         // Build URL with parameters for GET request
         const params = new URLSearchParams({
-            action: 'addPatient',
-            name: patientData.name,
-            age: patientData.age,
-            gender: patientData.gender,
-            phone: patientData.phone || '',
-            email: patientData.email || '',
-            visitDate: patientData.visitDate,
-            chiefComplaint: patientData.chiefComplaint,
-            diagnosis: patientData.diagnosis || '',
-            treatment: patientData.treatment || '',
-            notes: patientData.notes || ''
+            action: 'addRecord',
+            category: recordData.category || '',
+            name: recordData.name,
+            age: recordData.age,
+            sex: recordData.sex,
+            ipNumber: recordData.ipNumber || '',
+            procedureDate: recordData.procedureDate,
+            diagnosis: recordData.diagnosis,
+            procedureDone: recordData.procedureDone,
+            performedUnderSupervision: recordData.performedUnderSupervision || 'No',
+            independentlyPerformed: recordData.independentlyPerformed || 'No',
+            hospital: recordData.hospital || '',
+            supervisor: recordData.supervisor || '',
+            remarks: recordData.remarks || ''
         });
         
         const response = await fetch(`${CONFIG.SCRIPT_URL}?${params.toString()}`, {
@@ -237,22 +244,22 @@ async function savePatientToGoogleSheets(patientData) {
     }
 }
 
-async function loadPatients() {
+async function loadRecords() {
     try {
         showLoading(true);
         
         // Check if running from file:// protocol
         if (window.location.protocol === 'file:') {
             console.warn('Running from file:// - CORS will be blocked. Please use http://localhost:8000');
-            patients = getMockPatients();
-            displayPatients(patients);
+            records = getMockRecords();
+            displayRecords(records);
             showLoading(false);
             return;
         }
         
         // Try to load from Google Sheets first
         if (CONFIG.SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-            const response = await fetch(`${CONFIG.SCRIPT_URL}?action=getPatients`, {
+            const response = await fetch(`${CONFIG.SCRIPT_URL}?action=getRecords`, {
                 method: 'GET',
                 mode: 'cors'
             });
@@ -260,55 +267,60 @@ async function loadPatients() {
             if (response.ok) {
                 const result = await response.json();
                 if (result.success) {
-                    patients = result.data.patients || [];
+                    records = result.data.records || [];
                 } else {
                     throw new Error(result.message);
                 }
             }
         } else {
             // Use mock data for development
-            patients = getMockPatients();
+            records = getMockRecords();
         }
         
-        displayPatients(patients);
+        displayRecords(records);
     } catch (error) {
-        console.error('Error loading patients:', error);
+        console.error('Error loading records:', error);
         // Use mock data as fallback
-        patients = getMockPatients();
-        displayPatients(patients);
+        records = getMockRecords();
+        displayRecords(records);
     } finally {
         showLoading(false);
     }
 }
 
-function displayPatients(patientsToDisplay) {
-    const tableBody = document.getElementById('patientsTableBody');
+function displayRecords(recordsToDisplay) {
+    const tableBody = document.getElementById('recordsTableBody');
     const noRecords = document.getElementById('noRecords');
     
-    if (patientsToDisplay.length === 0) {
+    if (!tableBody) return;
+    
+    if (recordsToDisplay.length === 0) {
         tableBody.innerHTML = '';
-        noRecords.style.display = 'block';
+        if (noRecords) noRecords.style.display = 'block';
         return;
     }
     
-    noRecords.style.display = 'none';
+    if (noRecords) noRecords.style.display = 'none';
     
-    tableBody.innerHTML = patientsToDisplay.map(patient => `
+    tableBody.innerHTML = recordsToDisplay.map(record => `
         <tr>
-            <td>${formatDate(patient.visitDate)}</td>
+            <td>${formatDate(record.procedureDate || record.visitDate)}</td>
             <td>
-                <strong>${escapeHtml(patient.name)}</strong>
-                ${isNewPatient(patient.visitDate) ? '<span class="badge bg-success ms-1">New</span>' : ''}
+                <strong>${escapeHtml(record.name)}</strong>
+                ${isNewRecord(record.procedureDate || record.visitDate) ? '<span class="badge bg-success ms-1">New</span>' : ''}
             </td>
-            <td>${patient.age}</td>
-            <td>${patient.gender}</td>
-            <td>${patient.phone || '-'}</td>
-            <td>${truncateText(escapeHtml(patient.chiefComplaint), 50)}</td>
+            <td>${record.age}</td>
+            <td>${record.sex || record.gender || '-'}</td>
+            <td>${record.ipNumber || '-'}</td>
+            <td>${truncateText(escapeHtml(record.diagnosis), 40)}</td>
+            <td>${truncateText(escapeHtml(record.procedureDone || record.chiefComplaint || '-'), 40)}</td>
+            <td>${record.performedUnderSupervision === 'Yes' ? '<i class="bi bi-check-lg text-primary"></i>' : '-'}</td>
+            <td>${record.independentlyPerformed === 'Yes' ? '<i class="bi bi-check-lg text-success"></i>' : '-'}</td>
             <td>
-                <button class="btn btn-sm btn-outline-primary" onclick="viewPatient('${patient.id || patient.timestamp}')">
+                <button class="btn btn-sm btn-outline-primary" onclick="viewRecord('${record.id || record.timestamp}')">
                     <i class="bi bi-eye"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-success" onclick="printPatientRecord('${patient.id || patient.timestamp}')">
+                <button class="btn btn-sm btn-outline-success" onclick="printRecord('${record.id || record.timestamp}')">
                     <i class="bi bi-printer"></i>
                 </button>
             </td>
@@ -316,39 +328,42 @@ function displayPatients(patientsToDisplay) {
     `).join('');
 }
 
-function filterPatients(searchTerm) {
-    const filtered = patients.filter(patient => {
-        return patient.name.toLowerCase().includes(searchTerm) ||
-               patient.phone?.includes(searchTerm) ||
-               patient.email?.toLowerCase().includes(searchTerm) ||
-               patient.chiefComplaint.toLowerCase().includes(searchTerm) ||
-               patient.diagnosis?.toLowerCase().includes(searchTerm);
+function filterRecords(searchTerm) {
+    const filtered = records.filter(record => {
+        return record.name.toLowerCase().includes(searchTerm) ||
+               (record.ipNumber || '').toLowerCase().includes(searchTerm) ||
+               (record.diagnosis || '').toLowerCase().includes(searchTerm) ||
+               (record.procedureDone || record.chiefComplaint || '').toLowerCase().includes(searchTerm);
     });
     
-    displayPatients(filtered);
+    displayRecords(filtered);
 }
 
-function viewPatient(patientId) {
-    const patient = patients.find(p => (p.id || p.timestamp) === patientId);
-    if (!patient) return;
+function viewRecord(recordId) {
+    const record = records.find(r => (r.id || r.timestamp) === recordId);
+    if (!record) return;
     
-    currentPatient = patient;
+    currentRecord = record;
     
-    const modalBody = document.getElementById('patientDetails');
+    const modalBody = document.getElementById('procedureDetails');
+    if (!modalBody) return;
+    
+    const cat = record.category || sessionStorage.getItem('logbookCategory') || 'Procedure';
+    
     modalBody.innerHTML = `
         <div class="row">
             <div class="col-md-6">
-                <h6 class="text-primary">Personal Information</h6>
-                <p><strong>Name:</strong> ${escapeHtml(patient.name)}</p>
-                <p><strong>Age:</strong> ${patient.age}</p>
-                <p><strong>Gender:</strong> ${patient.gender}</p>
-                <p><strong>Phone:</strong> ${patient.phone || 'Not provided'}</p>
-                <p><strong>Email:</strong> ${patient.email || 'Not provided'}</p>
+                <h6 class="text-primary">Patient Information</h6>
+                <p><strong>Name:</strong> ${escapeHtml(record.name)}</p>
+                <p><strong>Age:</strong> ${record.age}</p>
+                <p><strong>Sex:</strong> ${record.sex || record.gender || '-'}</p>
+                <p><strong>IP No.:</strong> ${record.ipNumber || 'Not provided'}</p>
             </div>
             <div class="col-md-6">
-                <h6 class="text-primary">Visit Information</h6>
-                <p><strong>Visit Date:</strong> ${formatDate(patient.visitDate)}</p>
-                <p><strong>Chief Complaint:</strong> ${escapeHtml(patient.chiefComplaint)}</p>
+                <h6 class="text-primary">Procedure Information</h6>
+                <p><strong>Category:</strong> <span class="badge bg-info">${cat}</span></p>
+                <p><strong>Procedure Date:</strong> ${formatDate(record.procedureDate || record.visitDate)}</p>
+                <p><strong>Procedure Done:</strong> ${escapeHtml(record.procedureDone || record.chiefComplaint || '-')}</p>
             </div>
         </div>
         <hr>
@@ -356,62 +371,85 @@ function viewPatient(patientId) {
             <div class="col-12">
                 <h6 class="text-primary">Medical Details</h6>
                 <p><strong>Diagnosis:</strong></p>
-                <p>${escapeHtml(patient.diagnosis || 'Not recorded')}</p>
-                <p><strong>Treatment Plan:</strong></p>
-                <p>${escapeHtml(patient.treatment || 'Not recorded')}</p>
-                <p><strong>Additional Notes:</strong></p>
-                <p>${escapeHtml(patient.notes || 'No additional notes')}</p>
+                <p>${escapeHtml(record.diagnosis || 'Not recorded')}</p>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Performed Under Supervision:</strong> 
+                            ${record.performedUnderSupervision === 'Yes' ? '<span class="badge bg-primary">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Independently Performed:</strong> 
+                            ${record.independentlyPerformed === 'Yes' ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
+                        </p>
+                    </div>
+                </div>
+                
+                <p><strong>Hospital / Institution:</strong> ${escapeHtml(record.hospital || 'Not recorded')}</p>
+                <p><strong>Supervising Consultant:</strong> ${escapeHtml(record.supervisor || 'Not recorded')}</p>
+                <p><strong>Remarks:</strong></p>
+                <p>${escapeHtml(record.remarks || 'No additional remarks')}</p>
             </div>
         </div>
     `;
     
-    const modal = new bootstrap.Modal(document.getElementById('patientModal'));
+    const modal = new bootstrap.Modal(document.getElementById('procedureModal'));
     modal.show();
 }
 
-function printPatientRecord(patientId) {
-    if (patientId) {
-        const patient = patients.find(p => (p.id || p.timestamp) === patientId);
-        if (patient) {
-            currentPatient = patient;
+function printRecord(recordId) {
+    if (recordId) {
+        const record = records.find(r => (r.id || r.timestamp) === recordId);
+        if (record) {
+            currentRecord = record;
         }
     }
     
-    if (!currentPatient) {
-        showError('No patient record selected for printing.');
+    if (!currentRecord) {
+        showError('No procedure record selected for printing.');
         return;
     }
+    
+    const cat = currentRecord.category || sessionStorage.getItem('logbookCategory') || 'Procedure';
     
     // Create printable content
     const printContent = `
         <div class="print-only">
-            <h2>Doctor's Logbook - Patient Record</h2>
+            <h2>Doctor's Logbook - ${cat} Procedure Record</h2>
             <hr>
             <div class="row">
                 <div class="col-6">
-                    <p><strong>Patient Name:</strong> ${escapeHtml(currentPatient.name)}</p>
-                    <p><strong>Age:</strong> ${currentPatient.age}</p>
-                    <p><strong>Gender:</strong> ${currentPatient.gender}</p>
-                    <p><strong>Phone:</strong> ${currentPatient.phone || 'N/A'}</p>
-                    <p><strong>Email:</strong> ${currentPatient.email || 'N/A'}</p>
+                    <p><strong>Patient Name:</strong> ${escapeHtml(currentRecord.name)}</p>
+                    <p><strong>Age:</strong> ${currentRecord.age}</p>
+                    <p><strong>Sex:</strong> ${currentRecord.sex || currentRecord.gender || '-'}</p>
+                    <p><strong>IP No.:</strong> ${currentRecord.ipNumber || 'N/A'}</p>
                 </div>
                 <div class="col-6">
-                    <p><strong>Visit Date:</strong> ${formatDate(currentPatient.visitDate)}</p>
-                    <p><strong>Printed Date:</strong> ${formatDate(new Date().toISOString().split('T')[0])}</p>
+                    <p><strong>Procedure Date:</strong> ${formatDate(currentRecord.procedureDate || currentRecord.visitDate)}</p>
+                    <p><strong>Category:</strong> ${cat}</p>
+                    <p><strong>Printed Date:</strong> ${formatDate(new Date().toISOString())}</p>
                 </div>
             </div>
             <hr>
-            <h5>Chief Complaint</h5>
-            <p>${escapeHtml(currentPatient.chiefComplaint)}</p>
-            
             <h5>Diagnosis</h5>
-            <p>${escapeHtml(currentPatient.diagnosis || 'Not recorded')}</p>
+            <p>${escapeHtml(currentRecord.diagnosis || 'Not recorded')}</p>
             
-            <h5>Treatment Plan</h5>
-            <p>${escapeHtml(currentPatient.treatment || 'Not recorded')}</p>
+            <h5>Procedure Done</h5>
+            <p>${escapeHtml(currentRecord.procedureDone || currentRecord.chiefComplaint || 'Not recorded')}</p>
             
-            <h5>Additional Notes</h5>
-            <p>${escapeHtml(currentPatient.notes || 'No additional notes')}</p>
+            <h5>Performance Status</h5>
+            <p><strong>Performed Under Supervision:</strong> ${currentRecord.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</p>
+            <p><strong>Independently Performed:</strong> ${currentRecord.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</p>
+            
+            <h5>Hospital / Institution</h5>
+            <p>${escapeHtml(currentRecord.hospital || 'Not recorded')}</p>
+            
+            <h5>Supervising Consultant</h5>
+            <p>${escapeHtml(currentRecord.supervisor || 'Not recorded')}</p>
+            
+            <h5>Remarks</h5>
+            <p>${escapeHtml(currentRecord.remarks || currentRecord.notes || 'No additional remarks')}</p>
         </div>
     `;
     
@@ -421,7 +459,7 @@ function printPatientRecord(patientId) {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Patient Record - ${escapeHtml(currentPatient.name)}</title>
+            <title>Procedure Record - ${escapeHtml(currentRecord.name)}</title>
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
             <style>
                 body { font-family: Arial, sans-serif; padding: 20px; }
@@ -452,12 +490,12 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString(undefined, options);
 }
 
-function isNewPatient(visitDate) {
+function isNewRecord(visitDate) {
     const visit = new Date(visitDate);
     const today = new Date();
     const diffTime = Math.abs(today - visit);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7; // Consider patients from last 7 days as "new"
+    return diffDays <= 7; // Consider records from last 7 days as "new"
 }
 
 function escapeHtml(text) {
@@ -511,39 +549,45 @@ function showLoading(show) {
             button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
         } else {
             button.disabled = false;
-            button.innerHTML = '<i class="bi bi-save me-1"></i>Save Patient';
+            button.innerHTML = '<i class="bi bi-save me-1"></i>Save Procedure';
         }
     });
 }
 
-function getMockPatients() {
+function getMockRecords() {
     return [
         {
             id: '1',
+            category: 'Minor',
             name: 'John Doe',
             age: 45,
-            gender: 'Male',
-            phone: '+1 234-567-8900',
-            email: 'john.doe@email.com',
-            visitDate: '2024-06-01',
-            chiefComplaint: 'Persistent headache and dizziness for the past week',
+            sex: 'Male',
+            ipNumber: 'IP-2024-001',
+            procedureDate: '2024-06-01',
             diagnosis: 'Tension headache, possible hypertension',
-            treatment: 'Prescribed pain relievers, recommended blood pressure monitoring',
-            notes: 'Patient advised to follow up in 2 weeks',
+            procedureDone: 'Wound Dressing',
+            performedUnderSupervision: 'Yes',
+            independentlyPerformed: 'No',
+            hospital: 'City Hospital',
+            supervisor: 'Dr. Ahmed Khan',
+            remarks: 'Patient advised to follow up in 2 weeks',
             timestamp: '2024-06-01T10:30:00.000Z'
         },
         {
             id: '2',
+            category: 'Major',
             name: 'Jane Smith',
             age: 32,
-            gender: 'Female',
-            phone: '+1 234-567-8901',
-            email: 'jane.smith@email.com',
-            visitDate: '2024-05-30',
-            chiefComplaint: 'Annual checkup',
-            diagnosis: 'Good overall health',
-            treatment: 'Routine blood tests ordered',
-            notes: 'Patient maintains healthy lifestyle',
+            sex: 'Female',
+            ipNumber: 'IP-2024-002',
+            procedureDate: '2024-05-30',
+            diagnosis: 'Acute appendicitis',
+            procedureDone: 'Appendectomy',
+            performedUnderSupervision: 'No',
+            independentlyPerformed: 'Yes',
+            hospital: 'Metro Medical Center',
+            supervisor: 'Dr. Rajesh Patel',
+            remarks: 'Laparoscopic approach used',
             timestamp: '2024-05-30T14:15:00.000Z'
         }
     ];
@@ -580,14 +624,14 @@ function printDateRange() {
         return;
     }
     
-    // Filter patients by date range
-    const filteredPatients = patients.filter(patient => {
-        const visitDate = new Date(patient.visitDate);
+    // Filter records by date range
+    const filteredRecords = records.filter(record => {
+        const visitDate = new Date(record.procedureDate || record.visitDate);
         return visitDate >= new Date(startDate) && visitDate <= new Date(endDate + 'T23:59:59');
     });
     
-    if (filteredPatients.length === 0) {
-        showError('No patients found in the selected date range');
+    if (filteredRecords.length === 0) {
+        showError('No records found in the selected date range');
         return;
     }
     
@@ -595,7 +639,7 @@ function printDateRange() {
     bootstrap.Modal.getInstance(document.getElementById('printRangeModal')).hide();
     
     // Generate print content
-    generatePrintReport(filteredPatients, startDate, endDate, format, includeEmptyFields);
+    generatePrintReport(filteredRecords, startDate, endDate, format, includeEmptyFields);
 }
 
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields) {
@@ -618,7 +662,7 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Dr. Shabeel Sulaiman's Logbook - Patient Report</title>
+            <title>Dr. Shabeel Sulaiman's Logbook - Procedure Report</title>
             <style>
                 @page {
                     size: A4;
@@ -765,10 +809,10 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
         <body>
             <div class="header">
                 <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>Patient Report</strong></p>
+                <p><strong>Procedure Report</strong></p>
                 <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
                 <p>Generated on: ${formatDate(new Date().toISOString())}</p>
-                <p>Total Patients: ${patientsToPrint.length}</p>
+                <p>Total Records: ${patientsToPrint.length}</p>
             </div>
     `;
     
@@ -802,42 +846,56 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
 function generateDetailedReport(patientsToPrint, includeEmptyFields) {
     let content = '';
     
-    patientsToPrint.forEach((patient, index) => {
+    patientsToPrint.forEach((record, index) => {
+        const cat = record.category || 'Procedure';
         content += `
             <div class="patient-record">
                 <div class="patient-header">
-                    <h3>Patient ${index + 1}: ${escapeHtml(patient.name)}</h3>
+                    <h3>Record ${index + 1}: ${escapeHtml(record.name)}</h3>
                     <div class="serial-number">S.No: ${index + 1}</div>
-                    <p>Visit Date: ${formatDate(patient.visitDate)}</p>
+                    <p>${cat} | Date: ${formatDate(record.procedureDate || record.visitDate)}</p>
                 </div>
                 <div class="info-grid">
                     <div>
-                        <div class="info-item"><span class="info-label">Age:</span> ${patient.age}</div>
-                        <div class="info-item"><span class="info-label">Gender:</span> ${patient.gender}</div>
-                        <div class="info-item"><span class="info-label">Phone:</span> ${patient.phone || (includeEmptyFields ? '<span class="empty-field">Not provided</span>' : '')}</div>
+                        <div class="info-item"><span class="info-label">Age:</span> ${record.age}</div>
+                        <div class="info-item"><span class="info-label">Sex:</span> ${record.sex || record.gender || '-'}</div>
+                        <div class="info-item"><span class="info-label">IP No.:</span> ${record.ipNumber || 'N/A'}</div>
                     </div>
                     <div>
-                        <div class="info-item"><span class="info-label">Email:</span> ${patient.email || (includeEmptyFields ? '<span class="empty-field">Not provided</span>' : '')}</div>
-                        <div class="info-item"><span class="info-label">Patient ID:</span> ${patient.id || 'N/A'}</div>
-                        <div class="info-item"><span class="info-label">Recorded:</span> ${formatDate(patient.timestamp || patient.visitDate)}</div>
+                        <div class="info-item"><span class="info-label">Category:</span> ${cat}</div>
+                        <div class="info-item"><span class="info-label">Record ID:</span> ${record.id || 'N/A'}</div>
+                        <div class="info-item"><span class="info-label">Recorded:</span> ${formatDate(record.timestamp || record.procedureDate || record.visitDate)}</div>
                     </div>
                 </div>
-                <div class="section-title">Chief Complaint:</div>
-                <p>${escapeHtml(patient.chiefComplaint)}</p>
+                <div class="section-title">Diagnosis:</div>
+                <p>${escapeHtml(record.diagnosis || 'Not recorded')}</p>
                 
-                ${(patient.diagnosis || includeEmptyFields) ? `
-                    <div class="section-title">Diagnosis:</div>
-                    <p>${patient.diagnosis ? escapeHtml(patient.diagnosis) : '<span class="empty-field">No diagnosis recorded</span>'}</p>
+                <div class="section-title">Procedure Done:</div>
+                <p>${escapeHtml(record.procedureDone || record.chiefComplaint || 'Not recorded')}</p>
+                
+                <div class="section-title">Performance Status:</div>
+                <div class="info-grid">
+                    <div>
+                        <div class="info-item"><span class="info-label">Under Supervision:</span> ${record.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</div>
+                    </div>
+                    <div>
+                        <div class="info-item"><span class="info-label">Independently:</span> ${record.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</div>
+                    </div>
+                </div>
+                
+                ${(record.hospital || includeEmptyFields) ? `
+                    <div class="section-title">Hospital / Institution:</div>
+                    <p>${record.hospital ? escapeHtml(record.hospital) : '<span class="empty-field">Not recorded</span>'}</p>
                 ` : ''}
                 
-                ${(patient.treatment || includeEmptyFields) ? `
-                    <div class="section-title">Treatment Plan:</div>
-                    <p>${patient.treatment ? escapeHtml(patient.treatment) : '<span class="empty-field">No treatment recorded</span>'}</p>
+                ${(record.supervisor || includeEmptyFields) ? `
+                    <div class="section-title">Supervising Consultant:</div>
+                    <p>${record.supervisor ? escapeHtml(record.supervisor) : '<span class="empty-field">Not recorded</span>'}</p>
                 ` : ''}
                 
-                ${(patient.notes || includeEmptyFields) ? `
-                    <div class="section-title">Additional Notes:</div>
-                    <p>${patient.notes ? escapeHtml(patient.notes) : '<span class="empty-field">No additional notes</span>'}</p>
+                ${(record.remarks || record.notes || includeEmptyFields) ? `
+                    <div class="section-title">Remarks:</div>
+                    <p>${record.remarks || record.notes ? escapeHtml(record.remarks || record.notes) : '<span class="empty-field">No remarks</span>'}</p>
                 ` : ''}
             </div>
         `;
@@ -857,51 +915,56 @@ function generateSummaryReport(patientsToPrint, includeEmptyFields) {
         '51+': patientsToPrint.filter(p => p.age > 50).length
     };
     
-    const genderCount = {
-        'Male': patientsToPrint.filter(p => p.gender === 'Male').length,
-        'Female': patientsToPrint.filter(p => p.gender === 'Female').length,
-        'Other': patientsToPrint.filter(p => p.gender === 'Other').length
+    const sexCount = {
+        'Male': patientsToPrint.filter(p => (p.sex || p.gender) === 'Male').length,
+        'Female': patientsToPrint.filter(p => (p.sex || p.gender) === 'Female').length,
+        'Other': patientsToPrint.filter(p => (p.sex || p.gender) === 'Other').length
     };
+    
+    const supervisionCount = patientsToPrint.filter(p => p.performedUnderSupervision === 'Yes').length;
+    const independentCount = patientsToPrint.filter(p => p.independentlyPerformed === 'Yes').length;
     
     content += `
         <h3>Summary Statistics</h3>
         <div class="info-grid">
             <div>
                 <h4>Age Distribution</h4>
-                <p>0-18 years: ${ageGroups['0-18']} patients</p>
-                <p>19-35 years: ${ageGroups['19-35']} patients</p>
-                <p>36-50 years: ${ageGroups['36-50']} patients</p>
-                <p>51+ years: ${ageGroups['51+']} patients</p>
+                <p>0-18 years: ${ageGroups['0-18']} records</p>
+                <p>19-35 years: ${ageGroups['19-35']} records</p>
+                <p>36-50 years: ${ageGroups['36-50']} records</p>
+                <p>51+ years: ${ageGroups['51+']} records</p>
             </div>
             <div>
-                <h4>Gender Distribution</h4>
-                <p>Male: ${genderCount['Male']} patients</p>
-                <p>Female: ${genderCount['Female']} patients</p>
-                <p>Other: ${genderCount['Other']} patients</p>
+                <h4>Sex Distribution</h4>
+                <p>Male: ${sexCount['Male']} records</p>
+                <p>Female: ${sexCount['Female']} records</p>
+                <p>Other: ${sexCount['Other']} records</p>
+                <p>Under Supervision: ${supervisionCount}</p>
+                <p>Independent: ${independentCount}</p>
             </div>
         </div>
     `;
     
     content += '</div>';
     
-    // Brief patient list
-    content += '<h3>Patient Summary</h3>';
-    patientsToPrint.forEach((patient, index) => {
+    // Brief record list
+    content += '<h3>Procedure Summary</h3>';
+    patientsToPrint.forEach((record, index) => {
         content += `
             <div class="patient-record">
                 <div class="patient-header">
-                    <h4>${index + 1}. ${escapeHtml(patient.name)}</h4>
+                    <h4>${index + 1}. ${escapeHtml(record.name)}</h4>
                     <div class="serial-number">S.No: ${index + 1}</div>
                 </div>
                 <div class="info-grid">
                     <div>
-                        <div class="info-item"><span class="info-label">Visit Date:</span> ${formatDate(patient.visitDate)}</div>
-                        <div class="info-item"><span class="info-label">Age/Gender:</span> ${patient.age}/${patient.gender}</div>
-                        <div class="info-item"><span class="info-label">Contact:</span> ${patient.phone || 'Not provided'}</div>
+                        <div class="info-item"><span class="info-label">Date:</span> ${formatDate(record.procedureDate || record.visitDate)}</div>
+                        <div class="info-item"><span class="info-label">Age/Sex:</span> ${record.age}/${record.sex || record.gender || '-'}</div>
+                        <div class="info-item"><span class="info-label">IP No.:</span> ${record.ipNumber || 'Not provided'}</div>
                     </div>
                     <div>
-                        <div class="info-item"><span class="info-label">Chief Complaint:</span> ${escapeHtml(truncateText(patient.chiefComplaint, 100))}</div>
-                        <div class="info-item"><span class="info-label">Diagnosis:</span> ${patient.diagnosis ? escapeHtml(truncateText(patient.diagnosis, 100)) : 'Not recorded'}</div>
+                        <div class="info-item"><span class="info-label">Procedure:</span> ${escapeHtml(truncateText(record.procedureDone || record.chiefComplaint || '-', 100))}</div>
+                        <div class="info-item"><span class="info-label">Diagnosis:</span> ${record.diagnosis ? escapeHtml(truncateText(record.diagnosis, 100)) : 'Not recorded'}</div>
                     </div>
                 </div>
             </div>
@@ -920,26 +983,30 @@ function generateCompactReport(patientsToPrint) {
                     <th>Date</th>
                     <th>Name</th>
                     <th>Age</th>
-                    <th>Gender</th>
-                    <th>Phone</th>
-                    <th>Chief Complaint</th>
+                    <th>Sex</th>
+                    <th>IP No.</th>
                     <th>Diagnosis</th>
+                    <th>Procedure</th>
+                    <th>Supervision</th>
+                    <th>Independent</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
-    patientsToPrint.forEach((patient, index) => {
+    patientsToPrint.forEach((record, index) => {
         content += `
             <tr>
                 <td class="serial-col">${index + 1}</td>
-                <td>${formatDate(patient.visitDate)}</td>
-                <td>${escapeHtml(patient.name)}</td>
-                <td>${patient.age}</td>
-                <td>${patient.gender}</td>
-                <td>${patient.phone || '-'}</td>
-                <td>${escapeHtml(truncateText(patient.chiefComplaint, 50))}</td>
-                <td>${patient.diagnosis ? escapeHtml(truncateText(patient.diagnosis, 50)) : '-'}</td>
+                <td>${formatDate(record.procedureDate || record.visitDate)}</td>
+                <td>${escapeHtml(record.name)}</td>
+                <td>${record.age}</td>
+                <td>${record.sex || record.gender || '-'}</td>
+                <td>${record.ipNumber || '-'}</td>
+                <td>${escapeHtml(truncateText(record.diagnosis, 40))}</td>
+                <td>${escapeHtml(truncateText(record.procedureDone || record.chiefComplaint || '-', 40))}</td>
+                <td>${record.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</td>
+                <td>${record.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</td>
             </tr>
         `;
     });
@@ -962,7 +1029,7 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Dr. Shabeel Sulaiman's Logbook - Patient Report</title>
+            <title>Dr. Shabeel Sulaiman's Logbook - Procedure Report</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
@@ -1133,10 +1200,10 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
         <body>
             <div class="header">
                 <h1>Dr. Shabeel Sulaiman's Logbook</h1>
-                <p><strong>Patient Report</strong></p>
+                <p><strong>Procedure Report</strong></p>
                 <p>Date Range: ${startDateFormatted} to ${endDateFormatted}</p>
                 <p>Generated on: ${formatDate(new Date().toISOString())}</p>
-                <p>Total Patients: ${patientsToPrint.length}</p>
+                <p>Total Records: ${patientsToPrint.length}</p>
             </div>
     `;
     
@@ -1176,7 +1243,7 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `patient-report-${startDate}-to-${endDate}.html`;
+    a.download = `procedure-report-${startDate}-to-${endDate}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1187,8 +1254,8 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
 }
 
 // Export functions for global access
-window.viewPatient = viewPatient;
-window.printPatientRecord = printPatientRecord;
-window.loadPatients = loadPatients;
+window.viewRecord = viewRecord;
+window.printRecord = printRecord;
+window.loadRecords = loadRecords;
 window.showPrintRangeModal = showPrintRangeModal;
 window.printDateRange = printDateRange;
