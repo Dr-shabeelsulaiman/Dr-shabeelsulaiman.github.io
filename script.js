@@ -1370,9 +1370,27 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
                 <p><strong>Alternative:</strong> Use your browser's menu (&#x22EE;) &rarr; Print &rarr; Save as PDF</p>
             </div>
             
-            <button class="print-btn no-print" onclick="window.print()">
-                🖨️ Print Report (Save as PDF)
+            <button class="print-btn no-print" onclick="handleMobilePrint()">
+                Print Report (Save as PDF)
             </button>
+            <script>
+                function handleMobilePrint() {
+                    var printed = false;
+                    var beforePrint = function() { printed = true; };
+                    if (window.matchMedia) {
+                        var mediaQueryList = window.matchMedia('print');
+                        mediaQueryList.addListener(function(mql) { if (mql.matches) beforePrint(); });
+                    }
+                    window.addEventListener('beforeprint', beforePrint);
+                    window.print();
+                    setTimeout(function() {
+                        window.removeEventListener('beforeprint', beforePrint);
+                        if (!printed) {
+                            alert('Print dialog did not open.\\n\\nTo save as PDF:\\n1. Tap the browser menu (3 dots)\\n2. Select "Share" or "Print"\\n3. Choose "Save as PDF"\\n\\nOr use: Menu (3 dots) > Print > Save as PDF');
+                        }
+                    }, 500);
+                }
+            </script>
             
             <div class="no-print" style="margin-top: 30px; text-align: center;">
                 <p style="color: #666; font-size: 12px;">End of Report - Dr. Shabeel Sulaiman's Logbook</p>
