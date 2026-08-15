@@ -1301,21 +1301,150 @@ function printDateRange() {
     generatePrintReport(filteredRecords, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution);
 }
 
+// ==========================================
+// INSTITUTION-SPECIFIC PRINT & PDF HEADERS
+// ==========================================
+
+function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordCountText, dateRangeText) {
+    const isYMC = selectedInstitution === 'Yenepoya Medical College';
+    const isYMCTraining = selectedInstitution === 'Yenepoya Training Period';
+    const isThrissur = selectedInstitution === 'Thrissur Medical College';
+    const isCalicut = selectedInstitution === 'Calicut Medical College';
+    
+    // Logo markup for Yenepoya institutions
+    const logoImg = `<img src="logo.jpg" alt="Yenepoya University Logo" style="height: 75px; max-width: 80px; object-fit: contain;" onerror="this.style.display='none'">`;
+    
+    if (isYMC) {
+        return `
+            <div class="report-header" style="border-bottom: 2.5px solid #1e40af; padding-bottom: 12px; margin-bottom: 18px;">
+                <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
+                    <tr>
+                        <td style="width: 85px; vertical-align: middle; text-align: left; border: none; padding: 0;">
+                            ${logoImg}
+                        </td>
+                        <td style="vertical-align: middle; text-align: center; border: none; padding: 0 10px;">
+                            <h1 style="margin: 0; font-size: 16px; font-weight: 800; color: #1e3a8a; letter-spacing: 0.03em; text-transform: uppercase;">UROLOGY CLINICAL & OPERATIVE LOGBOOK</h1>
+                            <h2 style="margin: 3px 0 0 0; font-size: 13px; font-weight: 700; color: #0284c7; text-transform: uppercase;">DEPARTMENT OF NEPHRO-UROLOGY</h2>
+                            <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">YENEPOYA MEDICAL COLLEGE</h2>
+                            <h3 style="margin: 2px 0 0 0; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">MANGALURU, INDIA</h3>
+                        </td>
+                        <td style="width: 85px; border: none; padding: 0;"></td>
+                    </tr>
+                </table>
+                
+                <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                    <div>
+                        <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Consultant Urologist
+                    </div>
+                    <div style="color: #475569;">
+                        <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                    </div>
+                </div>
+                ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
+            </div>
+        `;
+    }
+    
+    if (isYMCTraining) {
+        return `
+            <div class="report-header" style="border-bottom: 2.5px solid #1e40af; padding-bottom: 12px; margin-bottom: 18px;">
+                <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
+                    <tr>
+                        <td style="width: 85px; vertical-align: middle; text-align: left; border: none; padding: 0;">
+                            ${logoImg}
+                        </td>
+                        <td style="vertical-align: middle; text-align: center; border: none; padding: 0 10px;">
+                            <h1 style="margin: 0; font-size: 15px; font-weight: 800; color: #1e3a8a; letter-spacing: 0.02em; text-transform: uppercase;">M.CH. UROLOGY CLINICAL, OPERATIVE & PROCEDURAL LOGBOOK</h1>
+                            <h2 style="margin: 3px 0 0 0; font-size: 13px; font-weight: 700; color: #0284c7; text-transform: uppercase;">DEPARTMENT OF NEPHRO UROLOGY</h2>
+                            <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">YENEPOYA MEDICAL COLLEGE</h2>
+                            <h3 style="margin: 2px 0 0 0; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">MANGALURU, INDIA</h3>
+                        </td>
+                        <td style="width: 85px; border: none; padding: 0;"></td>
+                    </tr>
+                </table>
+                
+                <div style="margin-top: 8px; padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; line-height: 1.5;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <span><strong>Name:</strong> Dr. Shabeel Sulaiman, MBBS, MS (General Surgery)</span>
+                        <span><strong>Designation:</strong> M.Ch. Urology Resident</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 2px; color: #334155;">
+                        <span><strong>Training Programme:</strong> Master of Chirurgiae (M.Ch.) in Urology</span>
+                        <span><strong>Training Institution:</strong> Yenepoya Medical College, Mangaluru, India</span>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 10.5px; color: #64748b; padding: 0 4px;">
+                    <span><strong>Category:</strong> ${selectedCategory} Procedures (${recordCountText} records)</span>
+                    ${dateRangeText ? `<span><strong>Period:</strong> ${dateRangeText}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    if (isThrissur) {
+        return `
+            <div class="report-header" style="border-bottom: 2.5px solid #059669; padding-bottom: 12px; margin-bottom: 18px; text-align: center;">
+                <h1 style="margin: 0; font-size: 16px; font-weight: 800; color: #065f46; letter-spacing: 0.02em; text-transform: uppercase;">LOGBOOK OF DR. SHABEEL SULAIMAN</h1>
+                <h2 style="margin: 3px 0 0 0; font-size: 13.5px; font-weight: 700; color: #059669; text-transform: uppercase;">DEPARTMENT OF UROLOGY</h2>
+                <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">GOVT. MEDICAL COLLEGE, THRISSUR</h2>
+                
+                <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                    <div>
+                        <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Assistant Professor of Urology
+                    </div>
+                    <div style="color: #475569;">
+                        <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                    </div>
+                </div>
+                ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
+            </div>
+        `;
+    }
+    
+    if (isCalicut) {
+        return `
+            <div class="report-header" style="border-bottom: 2.5px solid #0284c7; padding-bottom: 12px; margin-bottom: 18px; text-align: center;">
+                <h1 style="margin: 0; font-size: 16px; font-weight: 800; color: #0369a1; letter-spacing: 0.02em; text-transform: uppercase;">LOGBOOK OF DR. SHABEEL SULAIMAN</h1>
+                <h2 style="margin: 3px 0 0 0; font-size: 13.5px; font-weight: 700; color: #0284c7; text-transform: uppercase;">DEPARTMENT OF UROLOGY</h2>
+                <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">GOVT. MEDICAL COLLEGE, CALICUT (KOZHIKODE)</h2>
+                
+                <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                    <div>
+                        <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Assistant Professor of Urology
+                    </div>
+                    <div style="color: #475569;">
+                        <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                    </div>
+                </div>
+                ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
+            </div>
+        `;
+    }
+    
+    // Default / All Institutions
+    return `
+        <div class="report-header" style="border-bottom: 2.5px solid #1e40af; padding-bottom: 12px; margin-bottom: 18px; text-align: center;">
+            <h1 style="margin: 0; font-size: 16px; font-weight: 800; color: #1e3a8a; letter-spacing: 0.02em; text-transform: uppercase;">UROLOGY CLINICAL & OPERATIVE LOGBOOK</h1>
+            <h2 style="margin: 3px 0 0 0; font-size: 13.5px; font-weight: 700; color: #0284c7; text-transform: uppercase;">DEPARTMENT OF UROLOGY</h2>
+            <h3 style="margin: 2px 0 0 0; font-size: 13px; font-weight: 700; color: #111827; text-transform: uppercase;">LOGBOOK OF DR. SHABEEL SULAIMAN</h3>
+            
+            <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                <div>
+                    <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Consultant Urologist
+                </div>
+                <div style="color: #475569;">
+                    <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                </div>
+            </div>
+            ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
+        </div>
+    `;
+}
+
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
-    const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
-    const logoUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) + 'logo.jpg';
-    
-    // Hospital Title Mapping
-    const instTitles = {
-        'Thrissur Medical College': { h1: 'Govt Medical College Thrissur', h2: 'Department of Urology' },
-        'Calicut Medical College': { h1: 'Govt Medical College Calicut / Kozhikode', h2: 'Department of Urology' },
-        'Yenepoya Medical College': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology' },
-        'Yenepoya Training Period': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology - Training Period' },
-        'All': { h1: 'Department of Urology', h2: 'Surgical & Clinical Logbook' }
-    };
-    const titleInfo = instTitles[selectedInstitution] || instTitles['All'];
+    const dateRangeText = `${startDateFormatted} to ${endDateFormatted}`;
     
     // Check if mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -1335,37 +1464,18 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
             <style>
                 @page {
                     size: A4;
-                    margin: 15mm;
+                    margin: 12mm 15mm;
                 }
                 body { 
-                    font-family: Arial, sans-serif; 
+                    font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
                     margin: 0; 
-                    padding: 20px;
-                    color: #333;
-                    font-size: 12px;
-                    line-height: 1.4;
+                    padding: 15px;
+                    color: #1e293b;
+                    font-size: 11.5px;
+                    line-height: 1.45;
                     width: 210mm;
                     box-sizing: border-box;
                 }
-                .report-header {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 20px;
-                    border-bottom: 2px solid #007bff;
-                    padding-bottom: 15px;
-                    margin-bottom: 20px;
-                    text-align: center;
-                }
-                .report-header img {
-                    height: 80px;
-                    width: auto;
-                }
-                .header-text h1 { margin: 0; font-size: 18px; color: #007bff; }
-                .header-text h2 { margin: 2px 0; font-size: 14px; color: #666; font-weight: normal; }
-                .header-text h3 { margin: 2px 0; font-size: 13px; color: #333; }
-                .header-text p { margin: 4px 0 0 0; font-size: 11px; color: #888; }
-                
                 .compact-table { 
                     width: 100%; 
                     border-collapse: collapse; 
@@ -1373,35 +1483,38 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
                     font-size: 11px;
                 }
                 .compact-table th, .compact-table td { 
-                    border: 1px solid #ddd; 
+                    border: 1px solid #cbd5e1; 
                     padding: 6px 8px; 
                     text-align: center;
                     vertical-align: middle;
                 }
                 .compact-table th { 
-                    background: #f8f9fa; 
-                    font-weight: bold;
+                    background: #f1f5f9; 
+                    font-weight: 700;
+                    color: #334155;
+                    font-size: 10.5px;
+                    text-transform: uppercase;
                 }
                 .patient-record { 
-                    margin-bottom: 20px; 
+                    margin-bottom: 16px; 
                     page-break-inside: avoid; 
-                    border: 1px solid #ddd; 
-                    border-radius: 5px; 
-                    padding: 15px;
+                    border: 1px solid #cbd5e1; 
+                    border-radius: 6px; 
+                    padding: 12px;
+                    background: #ffffff;
                 }
                 .patient-header { 
-                    background: #007bff; 
+                    background: #1e40af; 
                     color: white; 
-                    padding: 8px 12px; 
-                    margin: -15px -15px 12px -15px; 
+                    padding: 7px 12px; 
+                    margin: -12px -12px 10px -12px; 
                     border-radius: 5px 5px 0 0;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                 }
-                .patient-header h3 { margin: 0; font-size: 14px; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-                .info-label { font-weight: bold; color: #555; }
+                .patient-header h3 { margin: 0; font-size: 13px; font-weight: 700; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
                 @media print { 
                     .no-print { display: none !important; }
                     body { margin: 0; padding: 0; }
@@ -1409,15 +1522,7 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
             </style>
         </head>
         <body>
-            <div class="report-header">
-                <div class="header-text">
-                    <h1>${titleInfo.h1}</h1>
-                    <h2>${titleInfo.h2}</h2>
-                    <h3>Logbook of Dr. Shabeel Sulaiman</h3>
-                    <p><strong>${catLabel} Procedure Report</strong> ${selectedInstitution !== 'All' ? `(${selectedInstitution})` : ''}</p>
-                    <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Total: ${patientsToPrint.length}</p>
-                </div>
-            </div>
+            ${getInstitutionHeaderHtml(selectedInstitution, selectedCategory, `${patientsToPrint.length} Records`, dateRangeText)}
     `;
     
     if (format === 'summary') {
@@ -1429,9 +1534,9 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
     }
     
     content += `
-        <div class="no-print" style="margin-top: 20px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Print Report
+        <div class="no-print" style="margin-top: 25px; text-align: center;">
+            <button onclick="window.print()" style="padding: 10px 24px; background: #1e40af; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;">
+                🖨️ Print / Save as PDF
             </button>
         </div>
         </body></html>
@@ -1444,16 +1549,7 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
 function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
-    const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
-    
-    const instTitles = {
-        'Thrissur Medical College': { h1: 'Govt Medical College Thrissur', h2: 'Department of Urology' },
-        'Calicut Medical College': { h1: 'Govt Medical College Calicut / Kozhikode', h2: 'Department of Urology' },
-        'Yenepoya Medical College': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology' },
-        'Yenepoya Training Period': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology - Training Period' },
-        'All': { h1: 'Department of Urology', h2: 'Surgical & Clinical Logbook' }
-    };
-    const titleInfo = instTitles[selectedInstitution] || instTitles['All'];
+    const dateRangeText = `${startDateFormatted} to ${endDateFormatted}`;
     
     let content = `
         <!DOCTYPE html>
@@ -1463,25 +1559,18 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Procedure Report - Dr. Shabeel Sulaiman</title>
             <style>
-                body { font-family: Arial, sans-serif; margin: 0; padding: 15px; color: #333; font-size: 12px; }
-                .report-header { text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 12px; margin-bottom: 15px; }
+                body { font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 12px; line-height: 1.45; }
                 .compact-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10px; }
-                .compact-table th, .compact-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: center; }
-                .compact-table th { background: #f8f9fa; font-weight: bold; }
-                .patient-record { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; padding: 12px; }
-                .patient-header { background: #007bff; color: white; padding: 6px 10px; margin: -12px -12px 10px -12px; border-radius: 5px 5px 0 0; }
-                .print-btn { background: #007bff; color: white; padding: 12px; border: none; border-radius: 5px; font-size: 16px; width: 100%; margin: 15px 0; }
+                .compact-table th, .compact-table td { border: 1px solid #cbd5e1; padding: 6px 7px; text-align: center; }
+                .compact-table th { background: #f1f5f9; font-weight: bold; color: #334155; }
+                .patient-record { margin-bottom: 14px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; }
+                .patient-header { background: #1e40af; color: white; padding: 6px 10px; margin: -12px -12px 10px -12px; border-radius: 5px 5px 0 0; }
+                .print-btn { background: #1e40af; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; width: 100%; margin: 15px 0; cursor: pointer; }
                 @media print { .no-print { display: none !important; } }
             </style>
         </head>
         <body>
-            <div class="report-header">
-                <h2 style="margin: 0; color: #007bff;">${titleInfo.h1}</h2>
-                <h3 style="margin: 3px 0; color: #555;">${titleInfo.h2}</h3>
-                <h4 style="margin: 3px 0;">Logbook of Dr. Shabeel Sulaiman</h4>
-                <p><strong>${catLabel} Procedure Report</strong> ${selectedInstitution !== 'All' ? `(${selectedInstitution})` : ''}</p>
-                <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Total: ${patientsToPrint.length}</p>
-            </div>
+            ${getInstitutionHeaderHtml(selectedInstitution, selectedCategory, `${patientsToPrint.length} Records`, dateRangeText)}
     `;
     
     if (format === 'summary') {
@@ -1493,7 +1582,7 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
     }
     
     content += `
-            <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
+            <button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
         </body>
         </html>
     `;
@@ -1509,6 +1598,140 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
     window.URL.revokeObjectURL(url);
     
     showSuccess('Report generated and downloaded! Open the file to view or save as PDF.');
+}
+
+function printRecord(recordId) {
+    let record = null;
+    if (recordId) {
+        record = records.find(r => (r.id || r.timestamp) === recordId);
+    }
+    if (!record && currentRecord) {
+        record = currentRecord;
+    }
+    if (!record) {
+        showError('No record selected for printing.');
+        return;
+    }
+
+    const mappedInst = normalizeInstitution(record.hospital);
+    const cat = record.category || sessionStorage.getItem('logbookCategory') || 'Major';
+    const visitDateFormatted = formatDate(record.procedureDate || record.visitDate);
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    const printHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Procedure Record - ${escapeHtml(record.name || 'Patient')}</title>
+            <style>
+                @page { size: A4; margin: 15mm; }
+                body { 
+                    font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    margin: 0; padding: 20px; color: #1e293b; font-size: 12px; line-height: 1.5;
+                    width: 210mm; box-sizing: border-box;
+                }
+                .record-box { border: 1.5px solid #cbd5e1; border-radius: 6px; overflow: hidden; margin-top: 15px; }
+                .record-box-header { background: #1e40af; color: white; padding: 10px 15px; font-size: 14px; font-weight: bold; }
+                .table-data { width: 100%; border-collapse: collapse; }
+                .table-data td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
+                .table-data td.lbl { width: 25%; font-weight: bold; color: #475569; background: #f8fafc; }
+                .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; }
+                .status-ind { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+                .status-sup { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+                .status-asst { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+                .status-obs { background: #cffafe; color: #155e75; border: 1px solid #a5f3fc; }
+                .sign-row { margin-top: 50px; display: flex; justify-content: space-between; text-align: center; }
+                .sign-box { width: 200px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px; font-weight: bold; }
+                @media print { .no-print { display: none !important; } }
+            </style>
+        </head>
+        <body>
+            ${getInstitutionHeaderHtml(mappedInst, cat, 'Single Procedure Log', visitDateFormatted)}
+            
+            <div class="record-box">
+                <div class="record-box-header">
+                    Procedure Record Details
+                </div>
+                <table class="table-data">
+                    <tr>
+                        <td class="lbl">Patient Name:</td>
+                        <td><strong>${escapeHtml(record.name || 'Unnamed')}</strong></td>
+                        <td class="lbl">IP / Inpatient No.:</td>
+                        <td><strong>${escapeHtml(record.ipNumber || '-')}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Age / Sex:</td>
+                        <td>${record.age !== undefined ? record.age + ' Years' : '-'} / ${escapeHtml(record.sex || record.gender || '-')}</td>
+                        <td class="lbl">Procedure Date:</td>
+                        <td><strong>${visitDateFormatted}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Diagnosis:</td>
+                        <td colspan="3"><strong>${escapeHtml(record.diagnosis || 'Not recorded')}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Procedure Done:</td>
+                        <td colspan="3" style="color: #1e40af; font-size: 13px;"><strong>${escapeHtml(record.procedureDone || record.chiefComplaint || '-')}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Performance Status:</td>
+                        <td colspan="3">
+                            ${(record.independentlyPerformed || '').toLowerCase() === 'yes' ? '<span class="status-badge status-ind">✓ Independently Performed</span>' : ''}
+                            ${(record.performedUnderSupervision || '').toLowerCase() === 'yes' ? '<span class="status-badge status-sup">✓ Under Supervision</span>' : ''}
+                            ${(record.assisted || '').toLowerCase() === 'yes' ? '<span class="status-badge status-asst">✓ Assisted</span>' : ''}
+                            ${(record.observed || '').toLowerCase() === 'yes' ? '<span class="status-badge status-obs">✓ Observed</span>' : ''}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Hospital / Institution:</td>
+                        <td>${escapeHtml(mappedInst)}</td>
+                        <td class="lbl">Supervisor / Consultant:</td>
+                        <td>${escapeHtml(record.supervisor || 'Dr. Shabeel Sulaiman')}</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Remarks / Findings:</td>
+                        <td colspan="3">${escapeHtml(record.remarks || 'No additional remarks')}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="sign-row">
+                <div class="sign-box">
+                    Signature of Candidate<br>
+                    (Dr. Shabeel Sulaiman)
+                </div>
+                <div class="sign-box">
+                    Signature of Consultant / HOD<br>
+                    Department of Urology
+                </div>
+            </div>
+
+            <div class="no-print" style="margin-top: 25px; text-align: center;">
+                <button onclick="window.print()" style="padding: 10px 24px; background: #1e40af; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;">
+                    🖨️ Print Record
+                </button>
+            </div>
+        </body>
+        </html>
+    `;
+
+    if (isMobile) {
+        const blob = new Blob([printHtml], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `procedure-${record.name || 'record'}-${visitDateFormatted}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showSuccess('Single record generated! Open the downloaded file to print or save as PDF.');
+    } else {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
+    }
 }
 
 function generateCompactReport(patientsToPrint) {
@@ -1557,13 +1780,13 @@ function generateSummaryReport(patientsToPrint, includeEmptyFields) {
     const obsCount = patientsToPrint.filter(p => (p.observed || '').toLowerCase() === 'yes').length;
     
     return `
-        <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #dee2e6;">
-            <h4 style="margin: 0 0 8px 0; color: #007bff;">Performance Summary</h4>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); text-align: center;">
-                <div><strong>Independently:</strong> ${indCount}</div>
-                <div><strong>Under Supervision:</strong> ${supCount}</div>
-                <div><strong>Assisted:</strong> ${asstCount}</div>
-                <div><strong>Observed:</strong> ${obsCount}</div>
+        <div style="background: #f8fafc; padding: 10px 14px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #cbd5e1;">
+            <h4 style="margin: 0 0 6px 0; color: #1e40af; font-size: 12px; text-transform: uppercase;">Performance Status Breakdown</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; font-size: 11px;">
+                <div><strong>Independently:</strong> <span style="color: #059669; font-weight: bold;">${indCount}</span></div>
+                <div><strong>Under Supervision:</strong> <span style="color: #1d4ed8; font-weight: bold;">${supCount}</span></div>
+                <div><strong>Assisted:</strong> <span style="color: #d97706; font-weight: bold;">${asstCount}</span></div>
+                <div><strong>Observed:</strong> <span style="color: #0284c7; font-weight: bold;">${obsCount}</span></div>
             </div>
         </div>
         ${generateCompactReport(patientsToPrint)}
@@ -1585,13 +1808,13 @@ function generateDetailedReport(patientsToPrint, includeEmptyFields) {
             </div>
             <div style="margin-top: 6px; font-size: 11px;">
                 <div><strong>Diagnosis:</strong> ${escapeHtml(p.diagnosis || '-')}</div>
-                <div><strong>Status:</strong> 
-                    ${p.independentlyPerformed === 'Yes' ? '[Independently Performed] ' : ''}
-                    ${p.performedUnderSupervision === 'Yes' ? '[Under Supervision] ' : ''}
-                    ${p.assisted === 'Yes' ? '[Assisted] ' : ''}
-                    ${p.observed === 'Yes' ? '[Observed] ' : ''}
+                <div style="margin-top: 3px;"><strong>Performance Status:</strong> 
+                    ${p.independentlyPerformed === 'Yes' ? '<span style="color: #059669; font-weight: bold;">[Independently Performed]</span> ' : ''}
+                    ${p.performedUnderSupervision === 'Yes' ? '<span style="color: #1d4ed8; font-weight: bold;">[Under Supervision]</span> ' : ''}
+                    ${p.assisted === 'Yes' ? '<span style="color: #d97706; font-weight: bold;">[Assisted]</span> ' : ''}
+                    ${p.observed === 'Yes' ? '<span style="color: #0284c7; font-weight: bold;">[Observed]</span> ' : ''}
                 </div>
-                ${p.remarks ? `<div><strong>Remarks:</strong> ${escapeHtml(p.remarks)}</div>` : ''}
+                ${p.remarks ? `<div style="margin-top: 3px;"><strong>Remarks:</strong> ${escapeHtml(p.remarks)}</div>` : ''}
             </div>
         </div>
     `).join('');
@@ -1618,3 +1841,4 @@ window.loadRecords = loadRecords;
 window.showPrintRangeModal = showPrintRangeModal;
 window.printDateRange = printDateRange;
 window.toggleTileStyle = toggleTileStyle;
+
