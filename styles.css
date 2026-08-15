@@ -585,17 +585,51 @@ body {
     color: var(--primary);
 }
 
-/* Print Optimization */
+/* Print Optimization (Mobile & Desktop) */
+#printContainer {
+    display: none;
+}
+
 @media print {
-    body {
-        background: white !important;
-        padding-bottom: 0 !important;
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm;
     }
-    .navbar, .mobile-bottom-nav, .btn, .context-strip, #viewModeToggle {
+    
+    html, body {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Hide everything on screen except printContainer */
+    body > *:not(#printContainer) {
         display: none !important;
     }
-    .card {
-        box-shadow: none !important;
-        border: none !important;
+    
+    .modal, .modal-backdrop, .navbar, .mobile-bottom-nav, .context-strip, .btn, #viewModeToggle {
+        display: none !important;
+    }
+    
+    #printContainer {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        visibility: visible !important;
+    }
+    
+    #printContainer * {
+        visibility: visible !important;
+    }
+    
+    .no-print {
+        display: none !important;
     }
 }

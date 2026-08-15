@@ -1456,6 +1456,44 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
         </div>
     `;
 }
+// ==========================================
+// IN-APP PRINT & PDF ENGINE (MOBILE & DESKTOP)
+// ==========================================
+
+let currentPreviewHtml = '';
+let currentPreviewFilename = 'logbook-report.html';
+
+function executeNativePrint() {
+    const printEl = document.getElementById('printContainer');
+    const previewEl = document.getElementById('printPreviewContent');
+    if (!printEl || !previewEl) {
+        window.print();
+        return;
+    }
+    
+    // Copy rendered content to print container
+    printEl.innerHTML = previewEl.innerHTML;
+    
+    // Trigger native browser print directly on main window (iOS Safari & Android Chrome 100% compatible)
+    setTimeout(() => {
+        window.print();
+    }, 100);
+}
+
+function downloadCurrentPreviewHtml() {
+    if (!currentPreviewHtml) return;
+    const blob = new Blob([currentPreviewHtml], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentPreviewFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    showSuccess('HTML Report downloaded successfully!');
+}
+
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
@@ -1470,177 +1508,30 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
         bodyContent = generateDetailedReport(patientsToPrint, includeEmptyFields);
     }
     
-    const content = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>Logbook Report - Dr. Shabeel Sulaiman</title>
-            <style>
-                @page {
-                    size: A4;
-                    margin: 12mm 15mm;
-                }
-                * { box-sizing: border-box; }
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 15px;
-                    color: #1e293b;
-                    font-size: 11.5px;
-                    line-height: 1.45;
-                    max-width: 210mm;
-                    margin-left: auto;
-                    margin-right: auto;
-                    background: #ffffff;
-                }
-                .mobile-toolbar {
-                    background: #f8fafc;
-                    border: 1.5px solid #cbd5e1;
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 20px;
-                    text-align: center;
-                }
-                .btn-print-action {
-                    background: #1e40af;
-                    color: #ffffff;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 12px 28px;
-                    font-size: 15px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    display: inline-block;
-                    text-decoration: none;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    -webkit-tap-highlight-color: transparent;
-                }
-                .btn-print-action:active {
-                    background: #1e3a8a;
-                    transform: scale(0.98);
-                }
-                .mobile-instructions {
-                    margin-top: 10px;
-                    padding: 10px 14px;
-                    background: #eff6ff;
-                    border: 1px solid #bfdbfe;
-                    border-radius: 6px;
-                    font-size: 11.5px;
-                    color: #1e3a8a;
-                    text-align: left;
-                    line-height: 1.6;
-                }
-                .compact-table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin-top: 15px; 
-                    font-size: 11px;
-                }
-                .compact-table th, .compact-table td { 
-                    border: 1px solid #cbd5e1; 
-                    padding: 6px 8px; 
-                    text-align: center;
-                    vertical-align: middle;
-                }
-                .compact-table th { 
-                    background: #f1f5f9; 
-                    font-weight: 700;
-                    color: #334155;
-                    font-size: 10.5px;
-                    text-transform: uppercase;
-                }
-                .patient-record { 
-                    margin-bottom: 16px; 
-                    page-break-inside: avoid; 
-                    border: 1px solid #cbd5e1; 
-                    border-radius: 6px; 
-                    padding: 12px;
-                    background: #ffffff;
-                }
-                .patient-header { 
-                    background: #1e40af; 
-                    color: white; 
-                    padding: 7px 12px; 
-                    margin: -12px -12px 10px -12px; 
-                    border-radius: 5px 5px 0 0;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .patient-header h3 { margin: 0; font-size: 13px; font-weight: 700; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-                .sign-row { margin-top: 40px; display: flex; justify-content: space-between; text-align: center; page-break-inside: avoid; }
-                .sign-box { width: 200px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px; font-weight: bold; }
-                @media print { 
-                    .no-print { display: none !important; }
-                    body { margin: 0; padding: 0; max-width: 100%; width: 100%; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="no-print mobile-toolbar">
-                <button type="button" class="btn-print-action" onclick="triggerReportPrint()">
-                    🖨️ Print / Save as PDF
-                </button>
-                <div class="mobile-instructions">
-                    <strong>📱 Mobile Printing Guide:</strong><br>
-                    • <strong>iPhone / iPad (Safari):</strong> Tap <strong>Share</strong> (box with up arrow 📤 at bottom) &rarr; tap <strong>Print</strong> &rarr; Pinch-out to preview/save as PDF.<br>
-                    • <strong>Android (Chrome):</strong> Tap <strong>3 Dots (⋮)</strong> &rarr; tap <strong>Share</strong> &rarr; tap <strong>Print</strong> &rarr; Select <strong>Save as PDF</strong>.
-                </div>
-            </div>
-
-            ${getInstitutionHeaderHtml(selectedInstitution, selectedCategory, `${patientsToPrint.length} Records`, dateRangeText)}
-            
+    const headerHtml = getInstitutionHeaderHtml(selectedInstitution, selectedCategory, `${patientsToPrint.length} Records`, dateRangeText);
+    const fullReportHtml = `
+        <div class="print-sheet" style="font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; font-size: 11.5px; line-height: 1.45;">
+            ${headerHtml}
             ${bodyContent}
-
-            <div class="no-print mobile-toolbar" style="margin-top: 25px;">
-                <button type="button" class="btn-print-action" onclick="triggerReportPrint()">
-                    🖨️ Print / Save as PDF
-                </button>
-            </div>
-
-            <script>
-                function triggerReportPrint() {
-                    try {
-                        window.print();
-                    } catch(e) {
-                        alert("To print on mobile, please use your browser menu: tap Share -> Print (iOS) or 3 Dots -> Share -> Print (Android).");
-                    }
-                }
-            </script>
-        </body>
-        </html>
+        </div>
     `;
     
-    // Attempt opening live printable window
-    let printWindow = null;
-    try {
-        printWindow = window.open('', '_blank');
-    } catch(e) {
-        printWindow = null;
-    }
+    currentPreviewHtml = fullReportHtml;
+    currentPreviewFilename = `procedure-report-${startDate}-to-${endDate}.html`;
     
-    if (printWindow && !printWindow.closed) {
-        printWindow.document.open();
-        printWindow.document.write(content);
-        printWindow.document.close();
-        setTimeout(() => {
-            try { printWindow.print(); } catch(e) {}
-        }, 500);
+    // Inject into preview modal and print container
+    const previewEl = document.getElementById('printPreviewContent');
+    const printEl = document.getElementById('printContainer');
+    if (previewEl) previewEl.innerHTML = fullReportHtml;
+    if (printEl) printEl.innerHTML = fullReportHtml;
+    
+    // Open Print Preview Modal
+    const previewModalEl = document.getElementById('printPreviewModal');
+    if (previewModalEl) {
+        const previewModal = bootstrap.Modal.getOrCreateInstance(previewModalEl);
+        previewModal.show();
     } else {
-        // Fallback: Download self-contained HTML file
-        const blob = new Blob([content], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `procedure-report-${startDate}-to-${endDate}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        showSuccess('Report ready! Open the downloaded file to print or save as PDF.');
+        executeNativePrint();
     }
 }
 
@@ -1665,193 +1556,84 @@ function printRecord(recordId) {
     const cat = record.category || sessionStorage.getItem('logbookCategory') || 'Major';
     const visitDateFormatted = formatDate(record.procedureDate || record.visitDate);
 
-    const printHtml = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>Procedure Record - ${escapeHtml(record.name || 'Patient')}</title>
-            <style>
-                @page { size: A4; margin: 15mm; }
-                * { box-sizing: border-box; }
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                    margin: 0; padding: 20px; color: #1e293b; font-size: 12px; line-height: 1.5;
-                    max-width: 210mm; margin-left: auto; margin-right: auto;
-                    background: #ffffff;
-                }
-                .mobile-toolbar {
-                    background: #f8fafc;
-                    border: 1.5px solid #cbd5e1;
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 20px;
-                    text-align: center;
-                }
-                .btn-print-action {
-                    background: #1e40af;
-                    color: #ffffff;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 12px 28px;
-                    font-size: 15px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    display: inline-block;
-                    text-decoration: none;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    -webkit-tap-highlight-color: transparent;
-                }
-                .btn-print-action:active {
-                    background: #1e3a8a;
-                    transform: scale(0.98);
-                }
-                .mobile-instructions {
-                    margin-top: 10px;
-                    padding: 10px 14px;
-                    background: #eff6ff;
-                    border: 1px solid #bfdbfe;
-                    border-radius: 6px;
-                    font-size: 11.5px;
-                    color: #1e3a8a;
-                    text-align: left;
-                    line-height: 1.6;
-                }
-                .record-box { border: 1.5px solid #cbd5e1; border-radius: 6px; overflow: hidden; margin-top: 15px; }
-                .record-box-header { background: #1e40af; color: white; padding: 10px 15px; font-size: 14px; font-weight: bold; }
-                .table-data { width: 100%; border-collapse: collapse; }
-                .table-data td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
-                .table-data td.lbl { width: 25%; font-weight: bold; color: #475569; background: #f8fafc; }
-                .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; }
-                .status-ind { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-                .status-sup { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-                .status-asst { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-                .status-obs { background: #cffafe; color: #155e75; border: 1px solid #a5f3fc; }
-                .sign-row { margin-top: 50px; display: flex; justify-content: space-between; text-align: center; }
-                .sign-box { width: 200px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px; font-weight: bold; }
-                @media print { 
-                    .no-print { display: none !important; }
-                    body { margin: 0; padding: 0; max-width: 100%; width: 100%; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="no-print mobile-toolbar">
-                <button type="button" class="btn-print-action" onclick="triggerRecordPrint()">
-                    🖨️ Print / Save as PDF
-                </button>
-                <div class="mobile-instructions">
-                    <strong>📱 Mobile Printing Guide:</strong><br>
-                    • <strong>iPhone / iPad (Safari):</strong> Tap <strong>Share</strong> (box with up arrow 📤) &rarr; tap <strong>Print</strong> &rarr; Pinch-out to save as PDF.<br>
-                    • <strong>Android (Chrome):</strong> Tap <strong>3 Dots (⋮)</strong> &rarr; tap <strong>Share</strong> &rarr; tap <strong>Print</strong> &rarr; Select <strong>Save as PDF</strong>.
-                </div>
-            </div>
-
-            ${getInstitutionHeaderHtml(mappedInst, cat, 'Single Procedure Log', visitDateFormatted)}
-            
-            <div class="record-box">
-                <div class="record-box-header">
+    const headerHtml = getInstitutionHeaderHtml(mappedInst, cat, 'Single Procedure Log', visitDateFormatted);
+    const recordDetailsHtml = `
+        <div class="print-sheet" style="font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; font-size: 12px; line-height: 1.5;">
+            ${headerHtml}
+            <div class="record-box" style="border: 1.5px solid #cbd5e1; border-radius: 6px; overflow: hidden; margin-top: 15px;">
+                <div class="record-box-header" style="background: #1e40af; color: white; padding: 10px 15px; font-size: 13.5px; font-weight: bold;">
                     Procedure Record Details
                 </div>
-                <table class="table-data">
+                <table class="table-data" style="width: 100%; border-collapse: collapse;">
                     <tr>
-                        <td class="lbl">Patient Name:</td>
-                        <td><strong>${escapeHtml(record.name || 'Unnamed')}</strong></td>
-                        <td class="lbl">IP / Inpatient No.:</td>
-                        <td><strong>${escapeHtml(record.ipNumber || '-')}</strong></td>
+                        <td class="lbl" style="width: 25%; font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Patient Name:</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;"><strong>${escapeHtml(record.name || 'Unnamed')}</strong></td>
+                        <td class="lbl" style="width: 25%; font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">IP / Inpatient No.:</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;"><strong>${escapeHtml(record.ipNumber || '-')}</strong></td>
                     </tr>
                     <tr>
-                        <td class="lbl">Age / Sex:</td>
-                        <td>${record.age !== undefined ? record.age + ' Years' : '-'} / ${escapeHtml(record.sex || record.gender || '-')}</td>
-                        <td class="lbl">Procedure Date:</td>
-                        <td><strong>${visitDateFormatted}</strong></td>
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Age / Sex:</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${record.age !== undefined ? record.age + ' Years' : '-'} / ${escapeHtml(record.sex || record.gender || '-')}</td>
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Procedure Date:</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;"><strong>${visitDateFormatted}</strong></td>
                     </tr>
                     <tr>
-                        <td class="lbl">Diagnosis:</td>
-                        <td colspan="3"><strong>${escapeHtml(record.diagnosis || 'Not recorded')}</strong></td>
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Diagnosis:</td>
+                        <td colspan="3" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;"><strong>${escapeHtml(record.diagnosis || 'Not recorded')}</strong></td>
                     </tr>
                     <tr>
-                        <td class="lbl">Procedure Done:</td>
-                        <td colspan="3" style="color: #1e40af; font-size: 13px;"><strong>${escapeHtml(record.procedureDone || record.chiefComplaint || '-')}</strong></td>
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Procedure Done:</td>
+                        <td colspan="3" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; color: #1e40af; font-size: 13px;"><strong>${escapeHtml(record.procedureDone || record.chiefComplaint || '-')}</strong></td>
                     </tr>
                     <tr>
-                        <td class="lbl">Performance Status:</td>
-                        <td colspan="3">
-                            ${(record.independentlyPerformed || '').toLowerCase() === 'yes' ? '<span class="status-badge status-ind">✓ Independently Performed</span>' : ''}
-                            ${(record.performedUnderSupervision || '').toLowerCase() === 'yes' ? '<span class="status-badge status-sup">✓ Under Supervision</span>' : ''}
-                            ${(record.assisted || '').toLowerCase() === 'yes' ? '<span class="status-badge status-asst">✓ Assisted</span>' : ''}
-                            ${(record.observed || '').toLowerCase() === 'yes' ? '<span class="status-badge status-obs">✓ Observed</span>' : ''}
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Performance Status:</td>
+                        <td colspan="3" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">
+                            ${(record.independentlyPerformed || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">✓ Independently Performed</span>' : ''}
+                            ${(record.performedUnderSupervision || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;">✓ Under Supervision</span>' : ''}
+                            ${(record.assisted || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">✓ Assisted</span>' : ''}
+                            ${(record.observed || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #cffafe; color: #155e75; border: 1px solid #a5f3fc;">✓ Observed</span>' : ''}
                         </td>
                     </tr>
                     <tr>
-                        <td class="lbl">Hospital / Institution:</td>
-                        <td>${escapeHtml(mappedInst)}</td>
-                        <td class="lbl">Supervisor / Consultant:</td>
-                        <td>${escapeHtml(record.supervisor || 'Dr. Shabeel Sulaiman')}</td>
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Hospital / Institution:</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${escapeHtml(mappedInst)}</td>
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Supervisor / Consultant:</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${escapeHtml(record.supervisor || 'Dr. Shabeel Sulaiman')}</td>
                     </tr>
                     <tr>
-                        <td class="lbl">Remarks / Findings:</td>
-                        <td colspan="3">${escapeHtml(record.remarks || 'No additional remarks')}</td>
+                        <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Remarks / Findings:</td>
+                        <td colspan="3" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${escapeHtml(record.remarks || 'No additional remarks')}</td>
                     </tr>
                 </table>
             </div>
 
-            <div class="sign-row">
-                <div class="sign-box">
+            <div class="sign-row" style="margin-top: 50px; display: flex; justify-content: space-between; text-align: center;">
+                <div class="sign-box" style="width: 200px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px; font-weight: bold;">
                     Signature of Candidate<br>
                     (Dr. Shabeel Sulaiman)
                 </div>
-                <div class="sign-box">
+                <div class="sign-box" style="width: 200px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px; font-weight: bold;">
                     Signature of Consultant / HOD<br>
                     Department of Urology
                 </div>
             </div>
-
-            <div class="no-print mobile-toolbar" style="margin-top: 25px;">
-                <button type="button" class="btn-print-action" onclick="triggerRecordPrint()">
-                    🖨️ Print / Save as PDF
-                </button>
-            </div>
-
-            <script>
-                function triggerRecordPrint() {
-                    try {
-                        window.print();
-                    } catch(e) {
-                        alert("To print on mobile, please use your browser menu: tap Share -> Print (iOS) or 3 Dots -> Share -> Print (Android).");
-                    }
-                }
-            </script>
-        </body>
-        </html>
+        </div>
     `;
 
-    let printWindow = null;
-    try {
-        printWindow = window.open('', '_blank');
-    } catch(e) {
-        printWindow = null;
-    }
+    currentPreviewHtml = recordDetailsHtml;
+    currentPreviewFilename = `procedure-${record.name || 'record'}-${visitDateFormatted}.html`;
 
-    if (printWindow && !printWindow.closed) {
-        printWindow.document.open();
-        printWindow.document.write(printHtml);
-        printWindow.document.close();
-        setTimeout(() => {
-            try { printWindow.print(); } catch(e) {}
-        }, 500);
+    const previewEl = document.getElementById('printPreviewContent');
+    const printEl = document.getElementById('printContainer');
+    if (previewEl) previewEl.innerHTML = recordDetailsHtml;
+    if (printEl) printEl.innerHTML = recordDetailsHtml;
+
+    const previewModalEl = document.getElementById('printPreviewModal');
+    if (previewModalEl) {
+        const previewModal = bootstrap.Modal.getOrCreateInstance(previewModalEl);
+        previewModal.show();
     } else {
-        const blob = new Blob([printHtml], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `procedure-${record.name || 'record'}-${visitDateFormatted}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        showSuccess('Single record downloaded! Open file to print or save as PDF.');
+        executeNativePrint();
     }
 }
 
