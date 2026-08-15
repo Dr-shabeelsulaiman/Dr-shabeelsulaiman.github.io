@@ -1,4 +1,4 @@
-// Doctor's Logbook JavaScript
+// Doctor's Logbook JavaScript - Dr. Shabeel Sulaiman
 
 // Configuration
 const CONFIG = {
@@ -6,9 +6,71 @@ const CONFIG = {
     SHEET_NAME: 'ProcedureRecords_v2'
 };
 
-// Global variables
+// Available Institutions
+const INSTITUTIONS = [
+    {
+        id: 'yenepoya',
+        name: 'Yenepoya Medical College',
+        fullTitle: 'Yenepoya Medical College, Mangalore',
+        short: 'YMC Mangalore'
+    },
+    {
+        id: 'yenepoya_training',
+        name: 'Yenepoya Training Period',
+        fullTitle: 'Yenepoya Medical College - Training Period',
+        short: 'YMC Training'
+    },
+    {
+        id: 'thrissur',
+        name: 'Thrissur Medical College',
+        fullTitle: 'Govt Medical College Thrissur',
+        short: 'GMC Thrissur'
+    },
+    {
+        id: 'calicut',
+        name: 'Calicut Medical College',
+        fullTitle: 'Govt Medical College Calicut',
+        short: 'GMC Calicut'
+    }
+];
+
+const MINOR_PROCEDURES = [
+    'Wound Dressing','Suture Removal','Incision & Drainage','Biopsy','Catheterization',
+    'Lumbar Puncture','Thoracocentesis','Paracentesis','FNAC','Skin Biopsy',
+    'Nail Avulsion','Debridement','Cauterization','Cryotherapy','Excision of Small Lesion'
+];
+
+const MAJOR_PROCEDURES = [
+    'Appendectomy','Cholecystectomy','Hernia Repair','Laparotomy','Thyroidectomy',
+    'Mastectomy','Hemicolectomy','Gastrectomy','Nephrectomy','Splenectomy',
+    'Bowel Resection','Exploratory Laparotomy','Liver Resection','Pancreatectomy','Vascular Bypass',
+    'Right RIRS','Left RIRS','Right URSL','Left URSL','TURP','Right Pyeloplasty','Left Pyeloplasty'
+];
+
+// Global State variables
 let records = [];
 let currentRecord = null;
+let currentRoleFilter = 'all';
+let currentViewMode = 'cards';
+let activeView = 'home';
+
+// Map already entered data and variants to the 4 standard institutions
+function normalizeInstitution(rawHospital) {
+    if (!rawHospital) return 'Yenepoya Medical College'; // Map old/empty data to Yenepoya Medical College
+    const clean = rawHospital.toString().trim().toLowerCase();
+    
+    if (clean.includes('training')) {
+        return 'Yenepoya Training Period';
+    }
+    if (clean.includes('thrissur') || clean.includes('gmc thrissur') || clean.includes('tmc')) {
+        return 'Thrissur Medical College';
+    }
+    if (clean.includes('calicut') || clean.includes('kozhikode') || clean.includes('cmc') || clean.includes('gmc calicut')) {
+        return 'Calicut Medical College';
+    }
+    // Default mapped to Yenepoya Medical College
+    return 'Yenepoya Medical College';
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,71 +78,228 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    // Set today's date as default
+    // 1. Initialize Active Institution from storage (Default: Yenepoya Medical College)
+    const savedInst = localStorage.getItem('logbookInstitution') || sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College';
+    applyInstitution(savedInst);
+
+    // 2. Initialize Active Category from storage (Default: Major)
+    const savedCat = localStorage.getItem('logbookCategory') || sessionStorage.getItem('logbookCategory') || 'Major';
+    applyCategory(savedCat);
+
+    // 3. Set today's date as default on the form
     const dateEl = document.getElementById('procedureDate');
     if (dateEl) dateEl.valueAsDate = new Date();
-    
-    // Load existing records
+
+    // 4. Load database records
     loadRecords();
-    
-    // Setup event listeners
+
+    // 5. Setup event listeners & search
     setupEventListeners();
-    
-    // Setup search functionality
     setupSearch();
+
+    // 6. Start on Home View
+    showView('home');
+}
+
+// View Routing & Navigation
+function showView(viewName) {
+    activeView = viewName;
+    
+    // Hide all view sections
+    document.querySelectorAll('.view-section').forEach(sec => {
+        sec.classList.add('d-none');
+    });
+
+    // Show target section
+    const target = document.getElementById(`view-${viewName}`);
+    if (target) {
+        target.classList.remove('d-none');
+    }
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Update bottom nav active state
+    document.querySelectorAll('.mobile-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+
+    if (viewName === 'add') {
+        // Auto-fill hospital field on add form with currently selected institution
+        const currentInst = sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College';
+        const hospInput = document.getElementById('hospital');
+        if (hospInput && !document.getElementById('editingRecordId').value) {
+            hospInput.value = currentInst;
+        }
+    } else if (viewName === 'records') {
+        // Refresh records view
+        displayRecords(records);
+    } else if (viewName === 'home') {
+        // Refresh home stats
+        updateHeroStats();
+    }
+}
+
+// Institution Management
+function changeInstitution() {
+    const modalEl = document.getElementById('institutionModal');
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+function selectInstitution(instName) {
+    applyInstitution(instName);
+    const modalEl = document.getElementById('institutionModal');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+}
+
+function applyInstitution(instName) {
+    localStorage.setItem('logbookInstitution', instName);
+    sessionStorage.setItem('logbookInstitution', instName);
+
+    // Update UI elements
+    const navText = document.getElementById('navInstitutionText');
+    if (navText) navText.textContent = instName;
+
+    const heroText = document.getElementById('heroInstitutionText');
+    if (heroText) heroText.textContent = instName;
+
+    const actionText = document.getElementById('actionCardInstName');
+    if (actionText) actionText.textContent = instName;
+
+    const formText = document.getElementById('formInstitutionText');
+    if (formText) formText.textContent = instName;
+
+    // Update hospital input on add form if not in active edit mode
+    const hospInput = document.getElementById('hospital');
+    const editId = document.getElementById('editingRecordId');
+    if (hospInput && (!editId || !editId.value)) {
+        hospInput.value = instName;
+    }
+
+    // Update dropdown in records filter
+    const recordsInstFilter = document.getElementById('recordsFilterInstitution');
+    if (recordsInstFilter) {
+        recordsInstFilter.value = instName;
+    }
+
+    // Update dropdown in print modal
+    const printInstFilter = document.getElementById('printInstitution');
+    if (printInstFilter) {
+        printInstFilter.value = instName;
+    }
+
+    // Refresh displays
+    updateHeroStats();
+    displayRecords(records);
+}
+
+// Category Management
+function changeCategory() {
+    const modalEl = document.getElementById('categoryModal');
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+function selectCategory(category) {
+    applyCategory(category);
+    const modalEl = document.getElementById('categoryModal');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+}
+
+function applyCategory(category) {
+    localStorage.setItem('logbookCategory', category);
+    sessionStorage.setItem('logbookCategory', category);
+
+    // Update UI labels and badges
+    document.querySelectorAll('.category-label').forEach(el => el.textContent = category + ' Procedure');
+
+    const navCatText = document.getElementById('navCategoryText');
+    if (navCatText) navCatText.textContent = category;
+
+    const heroCatText = document.getElementById('heroCategoryText');
+    if (heroCatText) heroCatText.textContent = category + ' Procedures';
+
+    const actionCatText = document.getElementById('actionCardCatName');
+    if (actionCatText) actionCatText.textContent = category + ' Procedures';
+
+    const formCatText = document.getElementById('formCategoryText');
+    if (formCatText) formCatText.textContent = category + ' Procedure';
+
+    const catHidden = document.getElementById('category');
+    if (catHidden) catHidden.value = category;
+
+    // Update procedure datalist
+    const list = document.getElementById('procedureList');
+    if (list) {
+        list.innerHTML = '';
+        const procedures = category === 'Minor' ? MINOR_PROCEDURES : MAJOR_PROCEDURES;
+        procedures.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            list.appendChild(opt);
+        });
+    }
+
+    // Update records filter dropdown
+    const recordsCatFilter = document.getElementById('recordsFilterCategory');
+    if (recordsCatFilter) {
+        recordsCatFilter.value = category;
+    }
+
+    // Update print modal dropdown
+    const printCatFilter = document.getElementById('printCategory');
+    if (printCatFilter) {
+        printCatFilter.value = category;
+    }
+
+    // Clear search input and refresh
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+
+    updateHeroStats();
+    displayRecords(records);
+}
+
+// Records Filter Dropdowns
+function filterRecordsByInstitution(inst) {
+    displayRecords(records);
+}
+
+function filterRecordsByCategory(cat) {
+    if (cat !== 'All') {
+        applyCategory(cat);
+    } else {
+        displayRecords(records);
+    }
 }
 
 function setupEventListeners() {
-    // Form submission
     const form = document.getElementById('procedureForm');
     if (form) form.addEventListener('submit', handleFormSubmit);
-    
-    // Navigation smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
 }
 
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
     
-    // Standard input event - fixed function name
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase().trim();
         filterRecords(searchTerm);
     });
-    
-    // Mobile-specific fixes
-    searchInput.addEventListener('touchstart', function(e) {
-        e.target.focus();
-    });
-    
-    // Prevent zoom on iOS by ensuring font size is 16px on focus
-    searchInput.addEventListener('focus', function(e) {
-        e.target.style.fontSize = '16px';
-    });
-    
-    searchInput.addEventListener('blur', function(e) {
-        e.target.style.fontSize = '';
-    });
-    
-    // Ensure proper touch handling on mobile
-    searchInput.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        e.target.focus();
-    });
 }
 
+// Form Submission & Editing
 async function handleFormSubmit(event) {
     event.preventDefault();
     
@@ -104,7 +323,6 @@ async function handleFormSubmit(event) {
         
         if (result.success) {
             if (isEdit) {
-                // Update in local records array
                 const idx = records.findIndex(r => (r.id || r.timestamp) === editingId);
                 if (idx !== -1) {
                     records[idx] = {
@@ -117,7 +335,6 @@ async function handleFormSubmit(event) {
                 cancelEdit();
                 showSuccess('Procedure record updated successfully!');
             } else {
-                // Add immediately to local records array at the beginning
                 const newRecord = {
                     ...formData,
                     id: result.id || 'PAT_' + Date.now(),
@@ -132,12 +349,16 @@ async function handleFormSubmit(event) {
                 const dateEl = document.getElementById('procedureDate');
                 if (dateEl) dateEl.valueAsDate = new Date();
                 
-                // Re-apply category after reset
-                const cat = sessionStorage.getItem('logbookCategory');
-                if (cat) document.getElementById('category').value = cat;
+                // Re-apply active category and hospital
+                const cat = sessionStorage.getItem('logbookCategory') || 'Major';
+                document.getElementById('category').value = cat;
+                const inst = sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College';
+                document.getElementById('hospital').value = inst;
                 
                 showSuccess('Procedure record saved successfully!');
             }
+            
+            updateHeroStats();
             
             // Background sync with database after short delay
             setTimeout(() => {
@@ -169,21 +390,12 @@ function validateForm() {
             return false;
         }
     }
-    
-    // Ensure category is selected
-    const category = document.getElementById('category').value;
-    if (!category) {
-        showError('Please select a procedure category (Minor or Major).');
-        changeCategory();
-        return false;
-    }
-    
     return true;
 }
 
 function getFormData() {
     return {
-        category: document.getElementById('category').value,
+        category: document.getElementById('category').value || sessionStorage.getItem('logbookCategory') || 'Major',
         name: document.getElementById('patientName').value.trim(),
         age: parseInt(document.getElementById('patientAge').value),
         sex: document.getElementById('patientSex').value,
@@ -195,17 +407,14 @@ function getFormData() {
         assisted: document.getElementById('assisted').checked ? 'Yes' : 'No',
         performedUnderSupervision: document.getElementById('performedUnderSupervision').checked ? 'Yes' : 'No',
         independentlyPerformed: document.getElementById('independentlyPerformed').checked ? 'Yes' : 'No',
-        hospital: document.getElementById('hospital').value.trim(),
+        hospital: document.getElementById('hospital').value.trim() || sessionStorage.getItem('logbookInstitution') || '',
         remarks: document.getElementById('remarks').value.trim()
     };
 }
 
+// Google Sheets API
 async function saveRecordToGoogleSheets(recordData) {
     try {
-        console.log('Attempting to save record:', recordData);
-        console.log('Using Script URL:', CONFIG.SCRIPT_URL);
-        
-        // Build URL with parameters for GET request
         const params = new URLSearchParams({
             action: 'addRecord',
             category: recordData.category || '',
@@ -231,28 +440,18 @@ async function saveRecordToGoogleSheets(recordData) {
         });
         
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error response body:', errorText);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const result = await response.json();
-        console.log('Success response:', result);
-        return result;
+        return await response.json();
     } catch (error) {
         console.error('Google Sheets API Error:', error);
-        return { 
-            success: false, 
-            message: `Network error: ${error.message}`,
-            error: error.message
-        };
+        return { success: false, message: error.message, error: error.message };
     }
 }
 
 async function updateRecordInGoogleSheets(recordData, id) {
     try {
-        console.log('Attempting to update record ID:', id, recordData);
-        
         const params = new URLSearchParams({
             action: 'updateRecord',
             id: id,
@@ -282,22 +481,15 @@ async function updateRecordInGoogleSheets(recordData, id) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const result = await response.json();
-        return result;
+        return await response.json();
     } catch (error) {
         console.error('Google Sheets Update Error:', error);
-        return {
-            success: false,
-            message: `Network error: ${error.message}`,
-            error: error.message
-        };
+        return { success: false, message: error.message, error: error.message };
     }
 }
 
 async function deleteRecordFromGoogleSheets(id) {
     try {
-        console.log('Attempting to delete record ID:', id);
-        
         const params = new URLSearchParams({
             action: 'deleteRecord',
             id: id
@@ -312,20 +504,16 @@ async function deleteRecordFromGoogleSheets(id) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const result = await response.json();
-        return result;
+        return await response.json();
     } catch (error) {
         console.error('Google Sheets Delete Error:', error);
-        return {
-            success: false,
-            message: `Network error: ${error.message}`,
-            error: error.message
-        };
+        return { success: false, message: error.message, error: error.message };
     }
 }
 
 async function loadRecords(silent = false) {
     const tableBody = document.getElementById('recordsTableBody');
+    const mobileContainer = document.getElementById('mobileRecordsContainer');
     const noRecords = document.getElementById('noRecords');
     
     try {
@@ -338,6 +526,14 @@ async function loadRecords(silent = false) {
                     </td>
                 </tr>
             `;
+            if (mobileContainer) {
+                mobileContainer.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                        Loading records from database...
+                    </div>
+                `;
+            }
             if (noRecords) noRecords.style.display = 'none';
         }
         
@@ -356,34 +552,49 @@ async function loadRecords(silent = false) {
                 } else if (Array.isArray(result.data)) {
                     records = result.data;
                 }
-            } else {
-                throw new Error(`HTTP ${response.status}`);
             }
         }
         
+        updateHeroStats();
         displayRecords(records);
     } catch (error) {
         console.error('Error loading records:', error);
         if (!records) records = [];
+        updateHeroStats();
         displayRecords(records);
-        if (records.length === 0 && tableBody) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="12" class="text-center py-4 text-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Unable to connect to live database. 
-                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="loadRecords()">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Retry
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }
     }
 }
 
-let currentRoleFilter = 'all';
-let currentViewMode = window.innerWidth < 768 ? 'cards' : 'cards';
+// Calculate & update Hero card counters on home dashboard
+function updateHeroStats() {
+    const currentInst = sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College';
+    const currentCat = (sessionStorage.getItem('logbookCategory') || 'Major').toLowerCase();
+    
+    let pool = records;
+    if (currentCat) {
+        pool = pool.filter(r => (r.category || '').toString().trim().toLowerCase() === currentCat);
+    }
+    if (currentInst && currentInst !== 'All') {
+        pool = pool.filter(r => normalizeInstitution(r.hospital) === currentInst);
+    }
+
+    const total = pool.length;
+    const ind = pool.filter(r => (r.independentlyPerformed || '').toString().toLowerCase() === 'yes').length;
+    const sup = pool.filter(r => (r.performedUnderSupervision || '').toString().toLowerCase() === 'yes').length;
+    const asst = pool.filter(r => (r.assisted || '').toString().toLowerCase() === 'yes').length;
+
+    const elTotal = document.getElementById('heroTotalCount');
+    const elInd = document.getElementById('heroIndCount');
+    const elSup = document.getElementById('heroSupCount');
+    const elAsst = document.getElementById('heroAsstCount');
+    const elBadge = document.getElementById('badgeRecordCount');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elInd) elInd.textContent = ind;
+    if (elSup) elSup.textContent = sup;
+    if (elAsst) elAsst.textContent = asst;
+    if (elBadge) elBadge.textContent = `${total} Records`;
+}
 
 function switchViewMode(mode) {
     currentViewMode = mode;
@@ -393,28 +604,21 @@ function switchViewMode(mode) {
     const btnTable = document.getElementById('btnViewTable');
     
     if (mode === 'table') {
-        if (cardsCont) cardsCont.classList.add('d-none');
-        if (cardsCont) cardsCont.classList.remove('d-block');
+        if (cardsCont) { cardsCont.classList.add('d-none'); cardsCont.classList.remove('d-block'); }
         if (tableCont) tableCont.classList.remove('d-none');
-        if (btnTable) btnTable.classList.add('active', 'btn-primary');
-        if (btnTable) btnTable.classList.remove('btn-light');
-        if (btnCards) btnCards.classList.remove('active', 'btn-primary');
-        if (btnCards) btnCards.classList.add('btn-light');
+        if (btnTable) { btnTable.classList.add('active', 'btn-primary'); btnTable.classList.remove('btn-light'); }
+        if (btnCards) { btnCards.classList.remove('active', 'btn-primary'); btnCards.classList.add('btn-light'); }
     } else {
-        if (cardsCont) cardsCont.classList.remove('d-none');
-        if (cardsCont) cardsCont.classList.add('d-block');
+        if (cardsCont) { cardsCont.classList.remove('d-none'); cardsCont.classList.add('d-block'); }
         if (tableCont) tableCont.classList.add('d-none');
-        if (btnCards) btnCards.classList.add('active', 'btn-primary');
-        if (btnCards) btnCards.classList.remove('btn-light');
-        if (btnTable) btnTable.classList.remove('active', 'btn-primary');
-        if (btnTable) btnTable.classList.add('btn-light');
+        if (btnCards) { btnCards.classList.add('active', 'btn-primary'); btnCards.classList.remove('btn-light'); }
+        if (btnTable) { btnTable.classList.remove('active', 'btn-primary'); btnTable.classList.add('btn-light'); }
     }
 }
 
 function filterByRole(role) {
     currentRoleFilter = role;
     
-    // Highlight active stat card
     const cards = ['statCardAll', 'statCardInd', 'statCardSup', 'statCardAsst'];
     cards.forEach(id => {
         const el = document.getElementById(id);
@@ -441,13 +645,18 @@ function displayRecords(recordsToDisplay) {
     
     let list = Array.isArray(recordsToDisplay) ? [...recordsToDisplay] : [...records];
     
-    // Filter by current category (case-insensitive & trimmed)
-    const currentCategory = (sessionStorage.getItem('logbookCategory') || '').toString().trim().toLowerCase();
-    if (currentCategory) {
-        list = list.filter(r => {
-            const recCat = (r.category || '').toString().trim().toLowerCase();
-            return recCat === currentCategory;
-        });
+    // Filter by Category from filter dropdown or session
+    const filterCatEl = document.getElementById('recordsFilterCategory');
+    const selectedCategory = filterCatEl ? filterCatEl.value : (sessionStorage.getItem('logbookCategory') || 'Major');
+    if (selectedCategory && selectedCategory !== 'All') {
+        list = list.filter(r => (r.category || '').toString().trim().toLowerCase() === selectedCategory.toLowerCase());
+    }
+    
+    // Filter by Institution from filter dropdown
+    const filterInstEl = document.getElementById('recordsFilterInstitution');
+    const selectedInstitution = filterInstEl ? filterInstEl.value : (sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College');
+    if (selectedInstitution && selectedInstitution !== 'All') {
+        list = list.filter(r => normalizeInstitution(r.hospital) === selectedInstitution);
     }
     
     // Calculate category stats
@@ -488,8 +697,7 @@ function displayRecords(recordsToDisplay) {
             noRecords.style.display = 'block';
             const msg = noRecords.querySelector('p');
             if (msg) {
-                const catName = sessionStorage.getItem('logbookCategory') || 'procedure';
-                msg.textContent = `No ${catName.toLowerCase()} procedure records found`;
+                msg.textContent = `No ${selectedCategory.toLowerCase()} procedure records found for ${selectedInstitution}`;
             }
         }
         return;
@@ -555,6 +763,7 @@ function displayRecords(recordsToDisplay) {
             const sup = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
             const ind = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
             const recId = escapeHtml(record.id || record.timestamp || '');
+            const mappedInst = normalizeInstitution(record.hospital);
             
             const ageSex = [
                 record.age ? `${record.age} yrs` : '',
@@ -596,7 +805,7 @@ function displayRecords(recordsToDisplay) {
                     <div class="mobile-card-footer">
                         <div class="mobile-meta-info">
                             <span class="badge bg-light text-dark border me-1">IP: ${escapeHtml(record.ipNumber || 'N/A')}</span>
-                            <span>${escapeHtml(record.hospital || '')}</span>
+                            <span><i class="bi bi-hospital me-1 text-primary"></i>${escapeHtml(mappedInst)}</span>
                         </div>
                         
                         <div class="d-flex gap-1">
@@ -621,25 +830,17 @@ function displayRecords(recordsToDisplay) {
 }
 
 function filterRecords(searchTerm) {
-    const currentCategory = (sessionStorage.getItem('logbookCategory') || '').toString().trim().toLowerCase();
-    let pool = records;
-    if (currentCategory) {
-        pool = records.filter(r => {
-            const recCat = (r.category || '').toString().trim().toLowerCase();
-            return recCat === currentCategory;
-        });
-    }
-    
     if (!searchTerm) {
         displayRecords(records);
         return;
     }
     
-    const filtered = pool.filter(record => {
+    const filtered = records.filter(record => {
+        const mappedInst = normalizeInstitution(record.hospital);
         return (record.name || '').toLowerCase().includes(searchTerm) ||
                (record.ipNumber || '').toLowerCase().includes(searchTerm) ||
                (record.diagnosis || '').toLowerCase().includes(searchTerm) ||
-               (record.hospital || '').toLowerCase().includes(searchTerm) ||
+               mappedInst.toLowerCase().includes(searchTerm) ||
                (record.remarks || '').toLowerCase().includes(searchTerm) ||
                (record.procedureDone || record.chiefComplaint || '').toLowerCase().includes(searchTerm);
     });
@@ -657,6 +858,7 @@ function viewRecord(recordId) {
     if (!modalBody) return;
     
     const cat = record.category || sessionStorage.getItem('logbookCategory') || 'Procedure';
+    const mappedInst = normalizeInstitution(record.hospital);
     
     modalBody.innerHTML = `
         <div class="row g-3">
@@ -714,7 +916,7 @@ function viewRecord(recordId) {
                 <div class="row g-2">
                     <div class="col-md-6">
                         <p class="mb-1 text-muted small">Hospital / Institution:</p>
-                        <p class="fw-semibold">${escapeHtml(record.hospital || 'Not recorded')}</p>
+                        <p class="fw-semibold text-primary"><i class="bi bi-hospital me-1"></i>${escapeHtml(mappedInst)}</p>
                     </div>
                     <div class="col-md-6">
                         <p class="mb-1 text-muted small">Supervising Consultant:</p>
@@ -748,6 +950,8 @@ function editRecord(recordId) {
         return;
     }
     
+    showView('add');
+    
     // Set editing ID in hidden field
     const editIdInput = document.getElementById('editingRecordId');
     if (editIdInput) editIdInput.value = record.id || record.timestamp;
@@ -777,7 +981,6 @@ function editRecord(recordId) {
     if (cancelEditBtn) cancelEditBtn.classList.remove('d-none');
     if (resetBtn) resetBtn.classList.add('d-none');
     
-    // Switch active category if necessary
     if (record.category) {
         const catInput = document.getElementById('category');
         if (catInput) catInput.value = record.category;
@@ -789,7 +992,6 @@ function editRecord(recordId) {
     document.getElementById('patientSex').value = record.sex || record.gender || '';
     document.getElementById('ipNumber').value = record.ipNumber || '';
     
-    // Parse date for HTML date input (YYYY-MM-DD)
     if (record.procedureDate || record.visitDate) {
         const rawDate = record.procedureDate || record.visitDate;
         let dateVal = '';
@@ -817,21 +1019,14 @@ function editRecord(recordId) {
     document.getElementById('independentlyPerformed').checked = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
     
     // Sync tile styles
-    if (typeof toggleTileStyle === 'function') {
-        toggleTileStyle('observed');
-        toggleTileStyle('assisted');
-        toggleTileStyle('performedUnderSupervision');
-        toggleTileStyle('independentlyPerformed');
-    }
+    toggleTileStyle('observed');
+    toggleTileStyle('assisted');
+    toggleTileStyle('performedUnderSupervision');
+    toggleTileStyle('independentlyPerformed');
     
-    document.getElementById('hospital').value = record.hospital || '';
+    document.getElementById('hospital').value = normalizeInstitution(record.hospital);
     document.getElementById('remarks').value = record.remarks || '';
     
-    // Smooth scroll to form
-    const addSection = document.getElementById('add-procedure');
-    if (addSection) {
-        addSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
     document.getElementById('patientName').focus();
 }
 
@@ -858,16 +1053,17 @@ function cancelEdit() {
     if (form) form.reset();
     const dateEl = document.getElementById('procedureDate');
     if (dateEl) dateEl.valueAsDate = new Date();
-    const cat = sessionStorage.getItem('logbookCategory');
+    
+    const cat = sessionStorage.getItem('logbookCategory') || 'Major';
     if (cat) document.getElementById('category').value = cat;
     
-    // Reset tile styles
-    if (typeof toggleTileStyle === 'function') {
-        toggleTileStyle('observed');
-        toggleTileStyle('assisted');
-        toggleTileStyle('performedUnderSupervision');
-        toggleTileStyle('independentlyPerformed');
-    }
+    const inst = sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College';
+    if (inst) document.getElementById('hospital').value = inst;
+    
+    toggleTileStyle('observed');
+    toggleTileStyle('assisted');
+    toggleTileStyle('performedUnderSupervision');
+    toggleTileStyle('independentlyPerformed');
 }
 
 function deleteRecordFromModal() {
@@ -883,7 +1079,6 @@ async function deleteRecord(recordId) {
     const confirmed = window.confirm(`Are you sure you want to permanently delete the procedure record for "${name}"${proc}?\n\nThis action cannot be undone.`);
     if (!confirmed) return;
     
-    // Close modal if open
     const modalEl = document.getElementById('procedureModal');
     if (modalEl) {
         const modal = bootstrap.Modal.getInstance(modalEl);
@@ -893,161 +1088,96 @@ async function deleteRecord(recordId) {
     // Optimistic UI delete
     records = records.filter(r => (r.id || r.timestamp) !== recordId);
     displayRecords(records);
+    updateHeroStats();
     showSuccess(`Procedure record for "${name}" was deleted successfully.`);
     
-    // If currently editing this record, cancel edit mode
     const editIdInput = document.getElementById('editingRecordId');
     if (editIdInput && editIdInput.value === recordId) {
         cancelEdit();
     }
     
-    // Delete from Google Sheets backend
     const result = await deleteRecordFromGoogleSheets(recordId);
     if (!result.success) {
         console.warn('Backend delete warning:', result.message);
     }
 }
 
-function printRecord(recordId) {
-    if (recordId) {
-        const record = records.find(r => (r.id || r.timestamp) === recordId);
-        if (record) {
-            currentRecord = record;
+function toggleTileStyle(id) {
+    const cb = document.getElementById(id);
+    if (!cb) return;
+    const tileMap = {
+        'observed': 'tileObserved',
+        'assisted': 'tileAssisted',
+        'performedUnderSupervision': 'tileSupervised',
+        'independentlyPerformed': 'tileIndependent'
+    };
+    const classMap = {
+        'observed': 'active-observed',
+        'assisted': 'active-assisted',
+        'performedUnderSupervision': 'active-supervised',
+        'independentlyPerformed': 'active-independent'
+    };
+    const tile = document.getElementById(tileMap[id]);
+    if (tile) {
+        if (cb.checked) {
+            tile.classList.add(classMap[id]);
+        } else {
+            tile.classList.remove(classMap[id]);
         }
     }
-    
-    if (!currentRecord) {
-        showError('No procedure record selected for printing.');
-        return;
-    }
-    
-    const cat = currentRecord.category || sessionStorage.getItem('logbookCategory') || 'Procedure';
-    
-    // Create printable content
-    const printContent = `
-        <div class="print-only">
-            <h2>Doctor's Logbook - ${cat} Procedure Record</h2>
-            <hr>
-            <div class="row">
-                <div class="col-6">
-                    <p><strong>Patient Name:</strong> ${escapeHtml(currentRecord.name)}</p>
-                    <p><strong>Age:</strong> ${currentRecord.age}</p>
-                    <p><strong>Sex:</strong> ${currentRecord.sex || currentRecord.gender || '-'}</p>
-                    <p><strong>IP No.:</strong> ${currentRecord.ipNumber || 'N/A'}</p>
-                </div>
-                <div class="col-6">
-                    <p><strong>Procedure Date:</strong> ${formatDate(currentRecord.procedureDate || currentRecord.visitDate)}</p>
-                    <p><strong>Category:</strong> ${cat}</p>
-                    <p><strong>Printed Date:</strong> ${formatDate(new Date().toISOString())}</p>
-                </div>
-            </div>
-            <hr>
-            <h5>Diagnosis</h5>
-            <p>${escapeHtml(currentRecord.diagnosis || 'Not recorded')}</p>
-            
-            <h5>Procedure Done</h5>
-            <p>${escapeHtml(currentRecord.procedureDone || currentRecord.chiefComplaint || 'Not recorded')}</p>
-            
-            <h5>Performance Status</h5>
-            <p><strong>Observed:</strong> ${currentRecord.observed === 'Yes' ? 'Yes' : 'No'}</p>
-            <p><strong>Assisted:</strong> ${currentRecord.assisted === 'Yes' ? 'Yes' : 'No'}</p>
-            <p><strong>Performed Under Supervision:</strong> ${currentRecord.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</p>
-            <p><strong>Independently Performed:</strong> ${currentRecord.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</p>
-            
-            <h5>Hospital / Institution</h5>
-            <p>${escapeHtml(currentRecord.hospital || 'Not recorded')}</p>
-            
-            <h5>Supervising Consultant</h5>
-            <p>${escapeHtml(currentRecord.supervisor || 'Not recorded')}</p>
-            
-            <h5>Remarks</h5>
-            <p>${escapeHtml(currentRecord.remarks || currentRecord.notes || 'No additional remarks')}</p>
-        </div>
-    `;
-    
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Procedure Record - ${escapeHtml(currentRecord.name)}</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                .print-only { display: block; }
-                @media print { body { margin: 0; } }
-            </style>
-        </head>
-        <body>
-            ${printContent}
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-}
-
-// Utility Functions
-function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function isValidPhone(phone) {
-    return /^[\d\s\-\+\(\)]+$/.test(phone) && phone.replace(/\D/g, '').length >= 10;
 }
 
 function formatDate(dateString) {
-    if (!dateString) return '-';
-    try {
-        if (typeof dateString === 'string') {
-            const cleanStr = dateString.trim();
-            // Handle ISO string format YYYY-MM-DDTHH:MM:SS
-            if (cleanStr.includes('T')) {
-                const datePart = cleanStr.split('T')[0];
-                const parts = datePart.split('-');
-                if (parts.length === 3) {
-                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    const year = parts[0];
-                    const month = months[parseInt(parts[1], 10) - 1] || parts[1];
-                    const day = parts[2];
-                    return `${day}-${month}-${year}`;
-                }
-            }
-            // Handle YYYY-MM-DD
-            if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
-                const parts = cleanStr.split('-');
-                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                const year = parts[0];
-                const month = months[parseInt(parts[1], 10) - 1] || parts[1];
-                const day = parts[2];
-                return `${day}-${month}-${year}`;
-            }
+    if (!dateString) return 'Not recorded';
+    
+    let year, month, day;
+    if (typeof dateString === 'string') {
+        const cleanDate = dateString.split('T')[0];
+        const parts = cleanDate.split('-');
+        if (parts.length === 3) {
+            year = parseInt(parts[0], 10);
+            month = parseInt(parts[1], 10) - 1;
+            day = parseInt(parts[2], 10);
         }
-        const d = new Date(dateString);
-        if (isNaN(d.getTime())) return String(dateString);
-        const options = { year: 'numeric', month: 'short', day: 'numeric' };
-        return d.toLocaleDateString(undefined, options);
-    } catch (e) {
-        return String(dateString);
     }
+    
+    let date;
+    if (year !== undefined && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        date = new Date(year, month, day);
+    } else {
+        date = new Date(dateString);
+    }
+    
+    if (isNaN(date.getTime())) {
+        return dateString;
+    }
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = monthNames[date.getMonth()];
+    const y = date.getFullYear();
+    
+    return `${d}-${m}-${y}`;
 }
 
-function isNewRecord(visitDate) {
-    const visit = new Date(visitDate);
+function isNewRecord(dateString) {
+    if (!dateString) return false;
+    const visit = new Date(dateString);
     const today = new Date();
     const diffTime = Math.abs(today - visit);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7; // Consider records from last 7 days as "new"
+    return diffDays <= 7;
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
 function truncateText(text, maxLength) {
+    if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
@@ -1059,7 +1189,6 @@ function showSuccess(message) {
 }
 
 function showError(message) {
-    // Create error toast
     const toastHtml = `
         <div class="toast align-items-center text-white bg-danger border-0" role="alert">
             <div class="d-flex">
@@ -1101,15 +1230,13 @@ function showLoading(show, isEdit = false) {
     }
 }
 
-function getMockRecords() {
-    return [];
-}
+// ==========================================
+// PRINT & PDF REPORT GENERATOR
+// ==========================================
 
-// Print date range functionality
 function showPrintRangeModal() {
     const modal = new bootstrap.Modal(document.getElementById('printRangeModal'));
     
-    // Set default date range (last 30 days)
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 30);
@@ -1118,10 +1245,17 @@ function showPrintRangeModal() {
     document.getElementById('printStartDate').value = startDate.toISOString().split('T')[0];
     
     // Set category dropdown to current session category
-    const currentCategory = sessionStorage.getItem('logbookCategory');
+    const currentCategory = sessionStorage.getItem('logbookCategory') || 'Major';
     const catSelect = document.getElementById('printCategory');
     if (catSelect && currentCategory) {
         catSelect.value = currentCategory;
+    }
+    
+    // Set institution dropdown to current session institution
+    const currentInst = sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College';
+    const instSelect = document.getElementById('printInstitution');
+    if (instSelect && currentInst) {
+        instSelect.value = currentInst;
     }
     
     modal.show();
@@ -1133,6 +1267,7 @@ function printDateRange() {
     const format = document.getElementById('printFormat').value;
     const includeEmptyFields = document.getElementById('includeEmptyFields').checked;
     const selectedCategory = document.getElementById('printCategory').value;
+    const selectedInstitution = document.getElementById('printInstitution').value;
     
     if (!startDate || !endDate) {
         showError('Please select both start and end dates');
@@ -1144,17 +1279,18 @@ function printDateRange() {
         return;
     }
     
-    // Filter records by date range and selected category
+    // Filter records by date range, selected category, and selected institution
     const filteredRecords = records.filter(record => {
         const visitDate = new Date(record.procedureDate || record.visitDate);
         const inRange = visitDate >= new Date(startDate) && visitDate <= new Date(endDate + 'T23:59:59');
         const matchesCategory = selectedCategory === 'All' || record.category === selectedCategory;
-        return inRange && matchesCategory;
+        const matchesInst = selectedInstitution === 'All' || normalizeInstitution(record.hospital) === selectedInstitution;
+        return inRange && matchesCategory && matchesInst;
     });
     
     if (filteredRecords.length === 0) {
         const catLabel = selectedCategory === 'All' ? '' : selectedCategory.toLowerCase() + ' ';
-        showError(`No ${catLabel}records found in the selected date range`);
+        showError(`No ${catLabel}records found in the selected date range for ${selectedInstitution}`);
         return;
     }
     
@@ -1162,44 +1298,45 @@ function printDateRange() {
     bootstrap.Modal.getInstance(document.getElementById('printRangeModal')).hide();
     
     // Generate print content
-    generatePrintReport(filteredRecords, startDate, endDate, format, includeEmptyFields, selectedCategory);
+    generatePrintReport(filteredRecords, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution);
 }
 
-function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory) {
+function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
     const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
     const logoUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) + 'logo.jpg';
     
+    // Hospital Title Mapping
+    const instTitles = {
+        'Thrissur Medical College': { h1: 'Govt Medical College Thrissur', h2: 'Department of Urology' },
+        'Calicut Medical College': { h1: 'Govt Medical College Calicut / Kozhikode', h2: 'Department of Urology' },
+        'Yenepoya Medical College': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology' },
+        'Yenepoya Training Period': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology - Training Period' },
+        'All': { h1: 'Department of Urology', h2: 'Surgical & Clinical Logbook' }
+    };
+    const titleInfo = instTitles[selectedInstitution] || instTitles['All'];
+    
     // Check if mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-        // Mobile: Create downloadable HTML file
-        createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory);
+        createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution);
         return;
     }
     
-    // Desktop: Open print window
     const printWindow = window.open('', '_blank');
     
     let content = `
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Procedure Report</title>
+            <title>Procedure Report - Dr. Shabeel Sulaiman</title>
             <style>
                 @page {
                     size: A4;
                     margin: 15mm;
-                    @top-left { content: none; }
-                    @top-center { content: none; }
-                    @top-right { content: none; }
-                    @bottom-left { content: none; }
-                    @bottom-center { content: none; }
-                    @bottom-right { content: none; }
                 }
-                
                 body { 
                     font-family: Arial, sans-serif; 
                     margin: 0; 
@@ -1210,7 +1347,6 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
                     width: 210mm;
                     box-sizing: border-box;
                 }
-                
                 .report-header {
                     display: flex;
                     align-items: center;
@@ -1219,162 +1355,67 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
                     border-bottom: 2px solid #007bff;
                     padding-bottom: 15px;
                     margin-bottom: 20px;
-                }
-                
-                .report-header img {
-                    height: 70px;
-                    width: auto;
-                    max-width: 120px;
-                    object-fit: contain;
-                }
-                
-                .report-header .header-text {
                     text-align: center;
                 }
-                
-                .report-header .header-text h1 {
-                    color: #007bff;
-                    margin: 0 0 4px 0;
-                    font-size: 16px;
+                .report-header img {
+                    height: 80px;
+                    width: auto;
                 }
-                
-                .report-header .header-text h2 {
-                    color: #333;
-                    margin: 0 0 4px 0;
-                    font-size: 14px;
-                    font-weight: bold;
-                }
-                
-                .report-header .header-text h3 {
-                    color: #555;
-                    margin: 0 0 4px 0;
-                    font-size: 12px;
-                    font-weight: bold;
-                    font-style: italic;
-                }
-                
-                .report-header .header-text p {
-                    margin: 2px 0;
-                    color: #666;
-                    font-size: 11px;
-                }
-                
-                .summary { 
-                    background: #f8f9fa; 
-                    padding: 12px; 
-                    border-radius: 5px; 
-                    margin-bottom: 15px;
-                    border: 1px solid #ddd;
-                }
-                
-                .patient-record { 
-                    margin-bottom: 20px; 
-                    page-break-inside: avoid; 
-                    border: 1px solid #ddd; 
-                    border-radius: 5px; 
-                    padding: 12px;
-                }
-                
-                .patient-header { 
-                    background: #007bff; 
-                    color: white; 
-                    padding: 8px 12px; 
-                    margin: -12px -12px 12px -12px; 
-                    border-radius: 5px 5px 0 0;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                
-                .patient-header h3 {
-                    margin: 0;
-                    font-size: 14px;
-                }
-                
-                .serial-number {
-                    background: rgba(255,255,255,0.2);
-                    padding: 2px 8px;
-                    border-radius: 3px;
-                    font-weight: bold;
-                    font-size: 12px;
-                }
-                
-                .info-grid { 
-                    display: grid; 
-                    grid-template-columns: 1fr 1fr; 
-                    gap: 8px; 
-                    margin-bottom: 12px;
-                }
-                
-                .info-item { 
-                    margin-bottom: 4px;
-                    font-size: 11px;
-                }
-                
-                .info-label { 
-                    font-weight: bold; 
-                    color: #555;
-                    display: inline-block;
-                    min-width: 80px;
-                }
-                
-                .section-title { 
-                    font-weight: bold; 
-                    color: #007bff; 
-                    margin-top: 12px; 
-                    margin-bottom: 4px;
-                    font-size: 12px;
-                    border-bottom: 1px solid #e9ecef;
-                    padding-bottom: 2px;
-                }
-                
-                .empty-field { 
-                    color: #999; 
-                    font-style: italic;
-                }
+                .header-text h1 { margin: 0; font-size: 18px; color: #007bff; }
+                .header-text h2 { margin: 2px 0; font-size: 14px; color: #666; font-weight: normal; }
+                .header-text h3 { margin: 2px 0; font-size: 13px; color: #333; }
+                .header-text p { margin: 4px 0 0 0; font-size: 11px; color: #888; }
                 
                 .compact-table { 
                     width: 100%; 
                     border-collapse: collapse; 
                     margin-top: 15px;
-                    font-size: 10px;
+                    font-size: 11px;
                 }
-                
                 .compact-table th, .compact-table td { 
                     border: 1px solid #ddd; 
                     padding: 6px 8px; 
                     text-align: center;
                     vertical-align: middle;
                 }
-                
                 .compact-table th { 
                     background: #f8f9fa; 
                     font-weight: bold;
-                    font-size: 10px;
                 }
-                
-                .compact-table .serial-col {
-                    width: 40px;
-                    text-align: center;
-                    font-weight: bold;
+                .patient-record { 
+                    margin-bottom: 20px; 
+                    page-break-inside: avoid; 
+                    border: 1px solid #ddd; 
+                    border-radius: 5px; 
+                    padding: 15px;
                 }
-                
+                .patient-header { 
+                    background: #007bff; 
+                    color: white; 
+                    padding: 8px 12px; 
+                    margin: -15px -15px 12px -15px; 
+                    border-radius: 5px 5px 0 0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .patient-header h3 { margin: 0; font-size: 14px; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+                .info-label { font-weight: bold; color: #555; }
                 @media print { 
                     .no-print { display: none !important; }
-                    body { margin: 0; padding: 15mm; }
-                    .patient-record { page-break-inside: avoid; }
+                    body { margin: 0; padding: 0; }
                 }
             </style>
         </head>
         <body>
             <div class="report-header">
-                <img src="${logoUrl}" alt="Logo">
                 <div class="header-text">
-                    <h1>Govt Medical College Thrissur</h1>
-                    <h2>Department of Urology</h2>
+                    <h1>${titleInfo.h1}</h1>
+                    <h2>${titleInfo.h2}</h2>
                     <h3>Logbook of Dr. Shabeel Sulaiman</h3>
-                    <p><strong>${catLabel} Procedure Report</strong></p>
-                    <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Generated: ${formatDate(new Date().toISOString())} | Total: ${patientsToPrint.length}</p>
+                    <p><strong>${catLabel} Procedure Report</strong> ${selectedInstitution !== 'All' ? `(${selectedInstitution})` : ''}</p>
+                    <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Total: ${patientsToPrint.length}</p>
                 </div>
             </div>
     `;
@@ -1388,433 +1429,58 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
     }
     
     content += `
-            <div class="no-print" style="margin-top: 30px; text-align: center;">
-                <p style="color: #666;">End of Report - Dr. Shabeel Sulaiman's Logbook</p>
-            </div>
-        </body>
-        </html>
+        <div class="no-print" style="margin-top: 20px; text-align: center;">
+            <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Print Report
+            </button>
+        </div>
+        </body></html>
     `;
     
     printWindow.document.write(content);
     printWindow.document.close();
-    printWindow.focus();
-    
-    // Wait for content to load, then print
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 500);
 }
 
-function generateDetailedReport(patientsToPrint, includeEmptyFields) {
-    let content = '';
-    
-    patientsToPrint.forEach((record, index) => {
-        const cat = record.category || 'Procedure';
-        content += `
-            <div class="patient-record">
-                <div class="patient-header">
-                    <h3>Record ${index + 1}: ${escapeHtml(record.name)}</h3>
-                    <div class="serial-number">S.No: ${index + 1}</div>
-                    <p>${cat} | Date: ${formatDate(record.procedureDate || record.visitDate)}</p>
-                </div>
-                <div class="info-grid">
-                    <div>
-                        <div class="info-item"><span class="info-label">Age:</span> ${record.age}</div>
-                        <div class="info-item"><span class="info-label">Sex:</span> ${record.sex || record.gender || '-'}</div>
-                        <div class="info-item"><span class="info-label">IP No.:</span> ${record.ipNumber || 'N/A'}</div>
-                    </div>
-                    <div>
-                        <div class="info-item"><span class="info-label">Category:</span> ${cat}</div>
-                        <div class="info-item"><span class="info-label">Record ID:</span> ${record.id || 'N/A'}</div>
-                        <div class="info-item"><span class="info-label">Recorded:</span> ${formatDate(record.timestamp || record.procedureDate || record.visitDate)}</div>
-                    </div>
-                </div>
-                <div class="section-title">Diagnosis:</div>
-                <p>${escapeHtml(record.diagnosis || 'Not recorded')}</p>
-                
-                <div class="section-title">Procedure Done:</div>
-                <p>${escapeHtml(record.procedureDone || record.chiefComplaint || 'Not recorded')}</p>
-                
-                <div class="section-title">Performance Status:</div>
-                <div class="info-grid">
-                    <div>
-                        <div class="info-item"><span class="info-label">Observed:</span> ${record.observed === 'Yes' ? 'Yes' : 'No'}</div>
-                        <div class="info-item"><span class="info-label">Under Supervision:</span> ${record.performedUnderSupervision === 'Yes' ? 'Yes' : 'No'}</div>
-                    </div>
-                    <div>
-                        <div class="info-item"><span class="info-label">Assisted:</span> ${record.assisted === 'Yes' ? 'Yes' : 'No'}</div>
-                        <div class="info-item"><span class="info-label">Independently:</span> ${record.independentlyPerformed === 'Yes' ? 'Yes' : 'No'}</div>
-                    </div>
-                </div>
-                
-                ${(record.hospital || includeEmptyFields) ? `
-                    <div class="section-title">Hospital / Institution:</div>
-                    <p>${record.hospital ? escapeHtml(record.hospital) : '<span class="empty-field">Not recorded</span>'}</p>
-                ` : ''}
-                
-                ${(record.supervisor || includeEmptyFields) ? `
-                    <div class="section-title">Supervising Consultant:</div>
-                    <p>${record.supervisor ? escapeHtml(record.supervisor) : '<span class="empty-field">Not recorded</span>'}</p>
-                ` : ''}
-                
-                ${(record.remarks || record.notes || includeEmptyFields) ? `
-                    <div class="section-title">Remarks:</div>
-                    <p>${record.remarks || record.notes ? escapeHtml(record.remarks || record.notes) : '<span class="empty-field">No remarks</span>'}</p>
-                ` : ''}
-            </div>
-        `;
-    });
-    
-    return content;
-}
-
-function generateSummaryReport(patientsToPrint, includeEmptyFields) {
-    let content = '<div class="summary">';
-    
-    // Statistics
-    const ageGroups = {
-        '0-18': patientsToPrint.filter(p => p.age <= 18).length,
-        '19-35': patientsToPrint.filter(p => p.age > 18 && p.age <= 35).length,
-        '36-50': patientsToPrint.filter(p => p.age > 35 && p.age <= 50).length,
-        '51+': patientsToPrint.filter(p => p.age > 50).length
-    };
-    
-    const sexCount = {
-        'Male': patientsToPrint.filter(p => (p.sex || p.gender) === 'Male').length,
-        'Female': patientsToPrint.filter(p => (p.sex || p.gender) === 'Female').length,
-        'Other': patientsToPrint.filter(p => (p.sex || p.gender) === 'Other').length
-    };
-    
-    const observedCount = patientsToPrint.filter(p => p.observed === 'Yes').length;
-    const assistedCount = patientsToPrint.filter(p => p.assisted === 'Yes').length;
-    const supervisionCount = patientsToPrint.filter(p => p.performedUnderSupervision === 'Yes').length;
-    const independentCount = patientsToPrint.filter(p => p.independentlyPerformed === 'Yes').length;
-    
-    content += `
-        <h3>Summary Statistics</h3>
-        <div class="info-grid">
-            <div>
-                <h4>Age Distribution</h4>
-                <p>0-18 years: ${ageGroups['0-18']} records</p>
-                <p>19-35 years: ${ageGroups['19-35']} records</p>
-                <p>36-50 years: ${ageGroups['36-50']} records</p>
-                <p>51+ years: ${ageGroups['51+']} records</p>
-            </div>
-            <div>
-                <h4>Sex Distribution</h4>
-                <p>Male: ${sexCount['Male']} records</p>
-                <p>Female: ${sexCount['Female']} records</p>
-                <p>Other: ${sexCount['Other']} records</p>
-                <p>Observed: ${observedCount}</p>
-                <p>Assisted: ${assistedCount}</p>
-                <p>Under Supervision: ${supervisionCount}</p>
-                <p>Independent: ${independentCount}</p>
-            </div>
-        </div>
-    `;
-    
-    content += '</div>';
-    
-    // Brief record list
-    content += '<h3>Procedure Summary</h3>';
-    patientsToPrint.forEach((record, index) => {
-        content += `
-            <div class="patient-record">
-                <div class="patient-header">
-                    <h4>${index + 1}. ${escapeHtml(record.name)}</h4>
-                    <div class="serial-number">S.No: ${index + 1}</div>
-                </div>
-                <div class="info-grid">
-                    <div>
-                        <div class="info-item"><span class="info-label">Date:</span> ${formatDate(record.procedureDate || record.visitDate)}</div>
-                        <div class="info-item"><span class="info-label">Age/Sex:</span> ${record.age}/${record.sex || record.gender || '-'}</div>
-                        <div class="info-item"><span class="info-label">IP No.:</span> ${record.ipNumber || 'Not provided'}</div>
-                    </div>
-                    <div>
-                        <div class="info-item"><span class="info-label">Procedure:</span> ${escapeHtml(truncateText(record.procedureDone || record.chiefComplaint || '-', 100))}</div>
-                        <div class="info-item"><span class="info-label">Diagnosis:</span> ${record.diagnosis ? escapeHtml(truncateText(record.diagnosis, 100)) : 'Not recorded'}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    return content;
-}
-
-function generateCompactReport(patientsToPrint) {
-    let content = `
-        <table class="compact-table">
-            <thead>
-                <tr>
-                    <th class="serial-col">S.No</th>
-                    <th>Date</th>
-                    <th>Age</th>
-                    <th>Sex</th>
-                    <th>IP No.</th>
-                    <th>Diagnosis</th>
-                    <th>Procedure</th>
-                    <th>O</th>
-                    <th>A</th>
-                    <th>PS</th>
-                    <th>IP</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
-    patientsToPrint.forEach((record, index) => {
-        content += `
-            <tr>
-                <td class="serial-col">${index + 1}</td>
-                <td>${formatDate(record.procedureDate || record.visitDate)}</td>
-                <td>${record.age}</td>
-                <td>${record.sex || record.gender || '-'}</td>
-                <td>${record.ipNumber || '-'}</td>
-                <td>${escapeHtml(truncateText(record.diagnosis, 40))}</td>
-                <td>${escapeHtml(truncateText(record.procedureDone || record.chiefComplaint || '-', 40))}</td>
-                <td style="width:30px;text-align:center;vertical-align:middle;">${record.observed === 'Yes' ? '<strong>O</strong>' : ''}</td>
-                <td style="width:30px;text-align:center;vertical-align:middle;">${record.assisted === 'Yes' ? '<strong>A</strong>' : ''}</td>
-                <td style="width:30px;text-align:center;vertical-align:middle;">${record.performedUnderSupervision === 'Yes' ? '<strong>PS</strong>' : ''}</td>
-                <td style="width:30px;text-align:center;vertical-align:middle;">${record.independentlyPerformed === 'Yes' ? '<strong>IP</strong>' : ''}</td>
-            </tr>
-        `;
-    });
-    
-    content += `
-            </tbody>
-        </table>
-    `;
-    
-    return content;
-}
-
-
-function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory) {
+function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
     const catLabel = selectedCategory === 'All' ? 'All' : selectedCategory;
-    const logoUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) + 'logo.jpg';
     
-    // Generate the same content as desktop but as a downloadable file
+    const instTitles = {
+        'Thrissur Medical College': { h1: 'Govt Medical College Thrissur', h2: 'Department of Urology' },
+        'Calicut Medical College': { h1: 'Govt Medical College Calicut / Kozhikode', h2: 'Department of Urology' },
+        'Yenepoya Medical College': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology' },
+        'Yenepoya Training Period': { h1: 'Yenepoya Medical College, Mangalore', h2: 'Department of Urology - Training Period' },
+        'All': { h1: 'Department of Urology', h2: 'Surgical & Clinical Logbook' }
+    };
+    const titleInfo = instTitles[selectedInstitution] || instTitles['All'];
+    
     let content = `
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Procedure Report</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Procedure Report - Dr. Shabeel Sulaiman</title>
             <style>
-                @page {
-                    size: A4;
-                    margin: 15mm;
-                    @top-left { content: none; }
-                    @top-center { content: none; }
-                    @top-right { content: none; }
-                    @bottom-left { content: none; }
-                    @bottom-center { content: none; }
-                    @bottom-right { content: none; }
-                }
-                
-                body { 
-                    font-family: Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 20px;
-                    color: #333;
-                    font-size: 12px;
-                    line-height: 1.4;
-                    width: 210mm;
-                    box-sizing: border-box;
-                }
-                
-                .report-header {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 20px;
-                    border-bottom: 2px solid #007bff;
-                    padding-bottom: 15px;
-                    margin-bottom: 20px;
-                }
-                
-                .report-header img {
-                    height: 70px;
-                    width: auto;
-                    max-width: 120px;
-                    object-fit: contain;
-                }
-                
-                .report-header .header-text {
-                    text-align: center;
-                }
-                
-                .report-header .header-text h1 {
-                    color: #007bff;
-                    margin: 0 0 4px 0;
-                    font-size: 16px;
-                }
-                
-                .report-header .header-text h2 {
-                    color: #333;
-                    margin: 0 0 4px 0;
-                    font-size: 14px;
-                    font-weight: bold;
-                }
-                
-                .report-header .header-text h3 {
-                    color: #555;
-                    margin: 0 0 4px 0;
-                    font-size: 12px;
-                    font-weight: bold;
-                    font-style: italic;
-                }
-                
-                .report-header .header-text p {
-                    margin: 2px 0;
-                    color: #666;
-                    font-size: 11px;
-                }
-                
-                .summary { 
-                    background: #f8f9fa; 
-                    padding: 12px; 
-                    border-radius: 5px; 
-                    margin-bottom: 15px;
-                    border: 1px solid #ddd;
-                }
-                
-                .patient-record { 
-                    margin-bottom: 20px; 
-                    page-break-inside: avoid; 
-                    border: 1px solid #ddd; 
-                    border-radius: 5px; 
-                    padding: 12px;
-                }
-                
-                .patient-header { 
-                    background: #007bff; 
-                    color: white; 
-                    padding: 8px 12px; 
-                    margin: -12px -12px 12px -12px; 
-                    border-radius: 5px 5px 0 0;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                
-                .patient-header h3 {
-                    margin: 0;
-                    font-size: 14px;
-                }
-                
-                .serial-number {
-                    background: rgba(255,255,255,0.2);
-                    padding: 2px 8px;
-                    border-radius: 3px;
-                    font-weight: bold;
-                    font-size: 12px;
-                }
-                
-                .info-grid { 
-                    display: grid; 
-                    grid-template-columns: 1fr 1fr; 
-                    gap: 8px; 
-                    margin-bottom: 12px;
-                }
-                
-                .info-item { 
-                    margin-bottom: 4px;
-                    font-size: 11px;
-                }
-                
-                .info-label { 
-                    font-weight: bold; 
-                    color: #555;
-                    display: inline-block;
-                    min-width: 80px;
-                }
-                
-                .section-title { 
-                    font-weight: bold; 
-                    color: #007bff; 
-                    margin-top: 12px; 
-                    margin-bottom: 4px;
-                    font-size: 12px;
-                    border-bottom: 1px solid #e9ecef;
-                    padding-bottom: 2px;
-                }
-                
-                .empty-field { 
-                    color: #999; 
-                    font-style: italic;
-                }
-                
-                .compact-table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin-top: 15px;
-                    font-size: 10px;
-                }
-                
-                .compact-table th, .compact-table td { 
-                    border: 1px solid #ddd; 
-                    padding: 6px 8px; 
-                    text-align: center;
-                    vertical-align: middle;
-                }
-                
-                .compact-table th { 
-                    background: #f8f9fa; 
-                    font-weight: bold;
-                    font-size: 10px;
-                }
-                
-                .compact-table .serial-col {
-                    width: 40px;
-                    text-align: center;
-                    font-weight: bold;
-                }
-                
-                .print-btn {
-                    background: #007bff;
-                    color: white;
-                    padding: 15px;
-                    border: none;
-                    border-radius: 5px;
-                    font-size: 16px;
-                    margin: 20px 0;
-                    cursor: pointer;
-                    display: block;
-                    width: 100%;
-                    text-align: center;
-                }
-                
-                .instructions {
-                    background: #e7f3ff;
-                    padding: 15px;
-                    border-radius: 5px;
-                    margin: 20px 0;
-                    border-left: 4px solid #007bff;
-                }
-                
-                @media print { 
-                    .no-print { display: none !important; }
-                    body { margin: 0; padding: 15mm; }
-                    .patient-record { page-break-inside: avoid; }
-                }
+                body { font-family: Arial, sans-serif; margin: 0; padding: 15px; color: #333; font-size: 12px; }
+                .report-header { text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 12px; margin-bottom: 15px; }
+                .compact-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10px; }
+                .compact-table th, .compact-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: center; }
+                .compact-table th { background: #f8f9fa; font-weight: bold; }
+                .patient-record { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; padding: 12px; }
+                .patient-header { background: #007bff; color: white; padding: 6px 10px; margin: -12px -12px 10px -12px; border-radius: 5px 5px 0 0; }
+                .print-btn { background: #007bff; color: white; padding: 12px; border: none; border-radius: 5px; font-size: 16px; width: 100%; margin: 15px 0; }
+                @media print { .no-print { display: none !important; } }
             </style>
         </head>
         <body>
             <div class="report-header">
-                <img src="${logoUrl}" alt="Logo">
-                <div class="header-text">
-                    <h1>Govt Medical College Thrissur</h1>
-                    <h2>Department of Urology</h2>
-                    <h3>Logbook of Dr. Shabeel Sulaiman</h3>
-                    <p><strong>${catLabel} Procedure Report</strong></p>
-                    <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Generated: ${formatDate(new Date().toISOString())} | Total: ${patientsToPrint.length}</p>
-                </div>
+                <h2 style="margin: 0; color: #007bff;">${titleInfo.h1}</h2>
+                <h3 style="margin: 3px 0; color: #555;">${titleInfo.h2}</h3>
+                <h4 style="margin: 3px 0;">Logbook of Dr. Shabeel Sulaiman</h4>
+                <p><strong>${catLabel} Procedure Report</strong> ${selectedInstitution !== 'All' ? `(${selectedInstitution})` : ''}</p>
+                <p>Date Range: ${startDateFormatted} to ${endDateFormatted} | Total: ${patientsToPrint.length}</p>
             </div>
     `;
     
@@ -1827,48 +1493,11 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
     }
     
     content += `
-            <div class="instructions no-print">
-                <h3>Mobile Instructions</h3>
-                <p><strong>To save as PDF:</strong></p>
-                <ol>
-                    <li>Click the "Print Report" button below</li>
-                    <li>In the print dialog, choose "Save as PDF" or "Print to PDF"</li>
-                    <li>Uncheck "Headers and footers" in print settings (to remove page title/URL)</li>
-                    <li>Save the file to your device</li>
-                </ol>
-                <p><strong>Alternative:</strong> Use your browser's menu (&#x22EE;) &rarr; Print &rarr; Save as PDF</p>
-            </div>
-            
-            <button class="print-btn no-print" onclick="handleMobilePrint()">
-                Print Report (Save as PDF)
-            </button>
-            <script>
-                function handleMobilePrint() {
-                    var printed = false;
-                    var beforePrint = function() { printed = true; };
-                    if (window.matchMedia) {
-                        var mediaQueryList = window.matchMedia('print');
-                        mediaQueryList.addListener(function(mql) { if (mql.matches) beforePrint(); });
-                    }
-                    window.addEventListener('beforeprint', beforePrint);
-                    window.print();
-                    setTimeout(function() {
-                        window.removeEventListener('beforeprint', beforePrint);
-                        if (!printed) {
-                            alert('Print dialog did not open.\\n\\nTo save as PDF:\\n1. Tap the browser menu (3 dots)\\n2. Select "Share" or "Print"\\n3. Choose "Save as PDF"\\n\\nOr use: Menu (3 dots) > Print > Save as PDF');
-                        }
-                    }, 500);
-                }
-            </script>
-            
-            <div class="no-print" style="margin-top: 30px; text-align: center;">
-                <p style="color: #666; font-size: 12px;">End of Report - Dr. Shabeel Sulaiman's Logbook</p>
-            </div>
+            <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
         </body>
         </html>
     `;
     
-    // Create blob and download
     const blob = new Blob([content], { type: 'text/html' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1879,11 +1508,103 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
     
-    // Show success message
-    showSuccess('Report downloaded! Open the file and click "Print Report" to save as PDF.');
+    showSuccess('Report generated and downloaded! Open the file to view or save as PDF.');
+}
+
+function generateCompactReport(patientsToPrint) {
+    return `
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Age/Sex</th>
+                    <th>IP No.</th>
+                    <th>Diagnosis</th>
+                    <th>Procedure</th>
+                    <th>Obs</th>
+                    <th>Asst</th>
+                    <th>Sup</th>
+                    <th>Ind</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${patientsToPrint.map((p, idx) => `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${formatDate(p.procedureDate || p.visitDate)}</td>
+                        <td><strong>${escapeHtml(p.name || 'Unnamed')}</strong></td>
+                        <td>${p.age || '-'}/${p.sex || '-'}</td>
+                        <td>${escapeHtml(p.ipNumber || '-')}</td>
+                        <td>${escapeHtml(p.diagnosis || '-')}</td>
+                        <td><strong>${escapeHtml(p.procedureDone || '-')}</strong></td>
+                        <td>${(p.observed || '').toLowerCase() === 'yes' ? '✓' : '-'}</td>
+                        <td>${(p.assisted || '').toLowerCase() === 'yes' ? '✓' : '-'}</td>
+                        <td>${(p.performedUnderSupervision || '').toLowerCase() === 'yes' ? '✓' : '-'}</td>
+                        <td>${(p.independentlyPerformed || '').toLowerCase() === 'yes' ? '✓' : '-'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function generateSummaryReport(patientsToPrint, includeEmptyFields) {
+    const indCount = patientsToPrint.filter(p => (p.independentlyPerformed || '').toLowerCase() === 'yes').length;
+    const supCount = patientsToPrint.filter(p => (p.performedUnderSupervision || '').toLowerCase() === 'yes').length;
+    const asstCount = patientsToPrint.filter(p => (p.assisted || '').toLowerCase() === 'yes').length;
+    const obsCount = patientsToPrint.filter(p => (p.observed || '').toLowerCase() === 'yes').length;
+    
+    return `
+        <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #dee2e6;">
+            <h4 style="margin: 0 0 8px 0; color: #007bff;">Performance Summary</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); text-align: center;">
+                <div><strong>Independently:</strong> ${indCount}</div>
+                <div><strong>Under Supervision:</strong> ${supCount}</div>
+                <div><strong>Assisted:</strong> ${asstCount}</div>
+                <div><strong>Observed:</strong> ${obsCount}</div>
+            </div>
+        </div>
+        ${generateCompactReport(patientsToPrint)}
+    `;
+}
+
+function generateDetailedReport(patientsToPrint, includeEmptyFields) {
+    return patientsToPrint.map((p, idx) => `
+        <div class="patient-record">
+            <div class="patient-header">
+                <span>#${idx + 1} - ${escapeHtml(p.name || 'Unnamed')}</span>
+                <span>Date: ${formatDate(p.procedureDate || p.visitDate)}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
+                <div><strong>Age / Sex:</strong> ${p.age || '-'} / ${p.sex || '-'}</div>
+                <div><strong>IP Number:</strong> ${escapeHtml(p.ipNumber || '-')}</div>
+                <div><strong>Procedure:</strong> <strong>${escapeHtml(p.procedureDone || '-')}</strong></div>
+                <div><strong>Institution:</strong> ${escapeHtml(normalizeInstitution(p.hospital))}</div>
+            </div>
+            <div style="margin-top: 6px; font-size: 11px;">
+                <div><strong>Diagnosis:</strong> ${escapeHtml(p.diagnosis || '-')}</div>
+                <div><strong>Status:</strong> 
+                    ${p.independentlyPerformed === 'Yes' ? '[Independently Performed] ' : ''}
+                    ${p.performedUnderSupervision === 'Yes' ? '[Under Supervision] ' : ''}
+                    ${p.assisted === 'Yes' ? '[Assisted] ' : ''}
+                    ${p.observed === 'Yes' ? '[Observed] ' : ''}
+                </div>
+                ${p.remarks ? `<div><strong>Remarks:</strong> ${escapeHtml(p.remarks)}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
 }
 
 // Export functions for global access
+window.showView = showView;
+window.changeInstitution = changeInstitution;
+window.selectInstitution = selectInstitution;
+window.changeCategory = changeCategory;
+window.selectCategory = selectCategory;
+window.filterRecordsByInstitution = filterRecordsByInstitution;
+window.filterRecordsByCategory = filterRecordsByCategory;
 window.viewRecord = viewRecord;
 window.editRecord = editRecord;
 window.editRecordFromModal = editRecordFromModal;
@@ -1896,4 +1617,4 @@ window.printRecord = printRecord;
 window.loadRecords = loadRecords;
 window.showPrintRangeModal = showPrintRangeModal;
 window.printDateRange = printDateRange;
-
+window.toggleTileStyle = toggleTileStyle;

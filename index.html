@@ -28,7 +28,6 @@
         // Logout function
         function logout() {
             sessionStorage.removeItem('authenticated');
-            sessionStorage.removeItem('logbookCategory');
             window.location.href = 'login.html';
         }
         
@@ -38,109 +37,29 @@
                 window.location.href = 'login.html';
             }
         });
-        
-        // Category selection
-        function selectCategory(category) {
-            sessionStorage.setItem('logbookCategory', category);
-            const modalEl = document.getElementById('categoryModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
-            applyCategory(category);
-        }
-        
-        function changeCategory() {
-            const modalEl = document.getElementById('categoryModal');
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-        }
-        
-        function applyCategory(category) {
-            document.getElementById('category').value = category;
-            document.querySelectorAll('.category-label').forEach(el => el.textContent = category + ' Procedure');
-            
-            const catBadge = document.getElementById('categoryBadge');
-            if (catBadge) catBadge.classList.remove('d-none');
-            const catText = document.getElementById('categoryText');
-            if (catText) catText.textContent = category;
-            
-            // Update procedure datalist
-            const list = document.getElementById('procedureList');
-            if (list) {
-                list.innerHTML = '';
-                const procedures = category === 'Minor' ? MINOR_PROCEDURES : MAJOR_PROCEDURES;
-                procedures.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p;
-                    list.appendChild(opt);
-                });
-            }
-            
-            // Clear search input when switching category
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) searchInput.value = '';
-            if (typeof loadRecords === 'function') loadRecords();
-        }
-        
-        const MINOR_PROCEDURES = [
-            'Wound Dressing','Suture Removal','Incision & Drainage','Biopsy','Catheterization',
-            'Lumbar Puncture','Thoracocentesis','Paracentesis','FNAC','Skin Biopsy',
-            'Nail Avulsion','Debridement','Cauterization','Cryotherapy','Excision of Small Lesion'
-        ];
-        const MAJOR_PROCEDURES = [
-            'Appendectomy','Cholecystectomy','Hernia Repair','Laparotomy','Thyroidectomy',
-            'Mastectomy','Hemicolectomy','Gastrectomy','Nephrectomy','Splenectomy',
-            'Bowel Resection','Exploratory Laparotomy','Liver Resection','Pancreatectomy','Vascular Bypass',
-            'Right RIRS','Left RIRS','Right URSL','Left URSL','TURP','Right Pyeloplasty','Left Pyeloplasty'
-        ];
     </script>
-    
-    <!-- Category Selector Modal -->
-    <div class="modal fade" id="categoryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold">
-                        <i class="bi bi-clipboard2-pulse me-2"></i>Select Procedure Category
-                    </h5>
-                </div>
-                <div class="modal-body text-center py-4 px-3">
-                    <p class="text-muted mb-4">Choose which logbook records you want to view and manage:</p>
-                    <div class="d-grid gap-3 col-md-10 mx-auto">
-                        <button class="btn btn-outline-primary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Major')">
-                            <div>
-                                <i class="bi bi-heart-pulse-fill me-2 fs-4 text-primary"></i>
-                                <span class="fw-bold">Major Procedures</span>
-                                <div class="text-muted small">Surgeries, RIRS, URSL, TURP, Nephrectomy</div>
-                            </div>
-                            <i class="bi bi-chevron-right fs-5"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Minor')">
-                            <div>
-                                <i class="bi bi-bandaid-fill me-2 fs-4 text-info"></i>
-                                <span class="fw-bold">Minor Procedures</span>
-                                <div class="text-muted small">Biopsy, Catheterization, Drainage, Dressing</div>
-                            </div>
-                            <i class="bi bi-chevron-right fs-5"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid container-xl">
-            <a class="navbar-brand text-white" href="#">
+            <a class="navbar-brand text-white" href="#" onclick="showView('home')">
                 <i class="bi bi-clipboard2-pulse-fill me-2"></i>
                 <span>Dr. Shabeel's Logbook</span>
             </a>
             
             <div class="d-flex align-items-center gap-2">
-                <span id="categoryBadge" class="category-pill cursor-pointer" onclick="changeCategory()" title="Click to switch category">
+                <!-- Institution Badge -->
+                <span id="navInstitutionBadge" class="institution-pill" onclick="changeInstitution()" title="Click to switch institution">
+                    <i class="bi bi-hospital-fill"></i>
+                    <span id="navInstitutionText">Yenepoya Medical College</span>
+                    <i class="bi bi-chevron-down" style="font-size: 0.65rem;"></i>
+                </span>
+
+                <!-- Category Badge -->
+                <span id="navCategoryBadge" class="category-pill" onclick="changeCategory()" title="Click to switch category">
                     <i class="bi bi-tag-fill"></i>
-                    <span id="categoryText">Major</span>
-                    <i class="bi bi-chevron-down ms-1" style="font-size: 0.65rem;"></i>
+                    <span id="navCategoryText">Major</span>
+                    <i class="bi bi-chevron-down" style="font-size: 0.65rem;"></i>
                 </span>
                 
                 <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -151,12 +70,17 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center mt-2 mt-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="#add-procedure">
+                        <a class="nav-link text-white" href="#" onclick="showView('home')">
+                            <i class="bi bi-house-door-fill me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#" onclick="showView('add')">
                             <i class="bi bi-plus-circle me-1"></i>Add Procedure
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="#procedure-records">
+                        <a class="nav-link text-white" href="#" onclick="showView('records')">
                             <i class="bi bi-journal-medical me-1"></i>Records
                         </a>
                     </li>
@@ -166,8 +90,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link text-white" href="#" onclick="changeInstitution()">
+                            <i class="bi bi-hospital me-1"></i>Institution
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-white" href="#" onclick="changeCategory()">
-                            <i class="bi bi-arrow-repeat me-1"></i>Switch Category
+                            <i class="bi bi-arrow-repeat me-1"></i>Category
                         </a>
                     </li>
                     <li class="nav-item ms-lg-2">
@@ -182,64 +111,202 @@
 
     <!-- Main Content Container -->
     <div class="container-xl mt-3 mt-md-4" id="mainContent">
-        
-        <!-- Summary Stats Metrics Strip -->
-        <div class="row g-2 mb-3 mb-md-4" id="statsRow">
-            <div class="col-6 col-md-3">
-                <div class="stat-card" onclick="filterByRole('all')" id="statCardAll">
-                    <div class="stat-icon bg-primary text-white">
-                        <i class="bi bi-collection-fill"></i>
-                    </div>
-                    <div>
-                        <div class="stat-number text-primary" id="statTotalCount">0</div>
-                        <div class="stat-label">Total Logged</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card" onclick="filterByRole('independent')" id="statCardInd">
-                    <div class="stat-icon" style="background: #d1fae5; color: #059669;">
-                        <i class="bi bi-person-check-fill"></i>
-                    </div>
-                    <div>
-                        <div class="stat-number" style="color: #059669;" id="statIndCount">0</div>
-                        <div class="stat-label">Independent</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card" onclick="filterByRole('supervised')" id="statCardSup">
-                    <div class="stat-icon" style="background: #dbeafe; color: #1d4ed8;">
-                        <i class="bi bi-person-badge-fill"></i>
-                    </div>
-                    <div>
-                        <div class="stat-number" style="color: #1d4ed8;" id="statSupCount">0</div>
-                        <div class="stat-label">Supervised</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card" onclick="filterByRole('assisted')" id="statCardAsst">
-                    <div class="stat-icon" style="background: #fef3c7; color: #b45309;">
-                        <i class="bi bi-hand-thumbs-up-fill"></i>
-                    </div>
-                    <div>
-                        <div class="stat-number" style="color: #b45309;" id="statAsstCount">0</div>
-                        <div class="stat-label">Assisted</div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Add / Edit Procedure Form Section -->
-        <section id="add-procedure" class="mb-4 mb-md-5">
+        <!-- ========================================== -->
+        <!-- VIEW 1: HOME / LANDING DASHBOARD           -->
+        <!-- ========================================== -->
+        <section id="view-home" class="view-section">
+            <!-- Hero Welcome Card -->
+            <div class="hero-card">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-white text-primary fw-bold px-2 py-1">Department of Urology</span>
+                            <span class="badge bg-info text-white fw-bold px-2 py-1">Surgical Logbook</span>
+                        </div>
+                        <h3 class="fw-bold mb-1">Dr. Shabeel Sulaiman</h3>
+                        <p class="text-white-50 mb-3 small">Track, manage, and print your surgical and clinical procedure records.</p>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2 border border-white border-opacity-25 cursor-pointer" onclick="changeInstitution()" role="button">
+                                <small class="text-white-50 d-block" style="font-size: 0.72rem;">SELECTED INSTITUTION</small>
+                                <strong class="text-white"><i class="bi bi-hospital me-1 text-warning"></i><span id="heroInstitutionText">Yenepoya Medical College</span> <i class="bi bi-pencil-square ms-1 small"></i></strong>
+                            </div>
+                            
+                            <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2 border border-white border-opacity-25 cursor-pointer" onclick="changeCategory()" role="button">
+                                <small class="text-white-50 d-block" style="font-size: 0.72rem;">SELECTED CATEGORY</small>
+                                <strong class="text-white"><i class="bi bi-tag-fill me-1 text-warning"></i><span id="heroCategoryText">Major Procedures</span> <i class="bi bi-pencil-square ms-1 small"></i></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 mt-3 mt-md-0">
+                        <div class="row g-2 text-dark">
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-primary" id="heroTotalCount">0</div>
+                                    <small class="text-muted fw-semibold">Total Logged</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-success" id="heroIndCount">0</div>
+                                    <small class="text-muted fw-semibold">Independent</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-info" id="heroSupCount">0</div>
+                                    <small class="text-muted fw-semibold">Supervised</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-warning" id="heroAsstCount">0</div>
+                                    <small class="text-muted fw-semibold">Assisted</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Tiles Grid -->
+            <div class="row g-3 mb-4">
+                <!-- Action 1: Add Log -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="action-card" onclick="showView('add')">
+                        <div>
+                            <div class="action-card-icon" style="background: #ecfdf5; color: #059669;">
+                                <i class="bi bi-plus-circle-fill"></i>
+                            </div>
+                            <div class="action-card-title">
+                                <span>Add Procedure Log</span>
+                                <i class="bi bi-arrow-right text-success"></i>
+                            </div>
+                            <p class="action-card-desc">Log a new surgical or minor procedure with patient details, diagnosis, and performance status.</p>
+                        </div>
+                        <span class="action-card-badge" style="background: #d1fae5; color: #065f46;">
+                            <i class="bi bi-lightning-fill"></i> Fast Data Entry
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Action 2: Show Records -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="action-card" onclick="showView('records')">
+                        <div>
+                            <div class="action-card-icon" style="background: #eff6ff; color: #1e40af;">
+                                <i class="bi bi-journal-medical"></i>
+                            </div>
+                            <div class="action-card-title">
+                                <span>Show Records</span>
+                                <i class="bi bi-arrow-right text-primary"></i>
+                            </div>
+                            <p class="action-card-desc">Browse, search, edit, view details, or delete previously entered procedure logs in card/table view.</p>
+                        </div>
+                        <span class="action-card-badge" style="background: #dbeafe; color: #1e40af;">
+                            <i class="bi bi-eye-fill"></i> <span id="badgeRecordCount">View Records</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Action 3: Print Reports -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="action-card" onclick="showPrintRangeModal()">
+                        <div>
+                            <div class="action-card-icon" style="background: #f0f9ff; color: #0284c7;">
+                                <i class="bi bi-printer-fill"></i>
+                            </div>
+                            <div class="action-card-title">
+                                <span>Print Reports & PDF</span>
+                                <i class="bi bi-arrow-right text-info"></i>
+                            </div>
+                            <p class="action-card-desc">Generate official logbook printouts and PDF reports filtered by institution, category, and date range.</p>
+                        </div>
+                        <span class="action-card-badge" style="background: #cffafe; color: #155e75;">
+                            <i class="bi bi-file-earmark-pdf-fill"></i> PDF Generator
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Action 4: Select Institute -->
+                <div class="col-md-6 col-lg-6">
+                    <div class="action-card" onclick="changeInstitution()">
+                        <div>
+                            <div class="action-card-icon" style="background: #e0e7ff; color: #4338ca;">
+                                <i class="bi bi-hospital-fill"></i>
+                            </div>
+                            <div class="action-card-title">
+                                <span>Select Institution</span>
+                                <i class="bi bi-arrow-right text-indigo" style="color: #4338ca;"></i>
+                            </div>
+                            <p class="action-card-desc">Switch active hospital between Thrissur Medical College, Calicut Medical College, Yenepoya Medical College, or Training Period.</p>
+                        </div>
+                        <span class="action-card-badge" style="background: #e0e7ff; color: #3730a3;">
+                            <i class="bi bi-geo-alt-fill"></i> Current: <strong id="actionCardInstName" class="ms-1">Yenepoya Medical College</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Action 5: Switch Category -->
+                <div class="col-md-6 col-lg-6">
+                    <div class="action-card" onclick="changeCategory()">
+                        <div>
+                            <div class="action-card-icon" style="background: #fef3c7; color: #b45309;">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+                            <div class="action-card-title">
+                                <span>Switch Category</span>
+                                <i class="bi bi-arrow-right text-warning" style="color: #b45309;"></i>
+                            </div>
+                            <p class="action-card-desc">Switch procedure scope between Major Surgeries (TURP, RIRS, Nephrectomy) and Minor Procedures.</p>
+                        </div>
+                        <span class="action-card-badge" style="background: #fef3c7; color: #92400e;">
+                            <i class="bi bi-tag-fill"></i> Current: <strong id="actionCardCatName" class="ms-1">Major Procedures</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: ADD / EDIT PROCEDURE FORM          -->
+        <!-- ========================================== -->
+        <section id="view-add" class="view-section d-none mb-4 mb-md-5">
+            <!-- Context Header Banner -->
+            <div class="context-strip">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showView('home')">
+                        <i class="bi bi-arrow-left me-1"></i>Home Dashboard
+                    </button>
+                    <span class="text-muted">|</span>
+                    <span class="institution-pill" onclick="changeInstitution()" title="Click to change institution">
+                        <i class="bi bi-hospital-fill"></i>
+                        <span id="formInstitutionText">Yenepoya Medical College</span>
+                        <i class="bi bi-pencil-square ms-1" style="font-size: 0.7rem;"></i>
+                    </span>
+                    <span class="category-pill" onclick="changeCategory()" title="Click to change category">
+                        <i class="bi bi-tag-fill"></i>
+                        <span id="formCategoryText">Major Procedure</span>
+                        <i class="bi bi-pencil-square ms-1" style="font-size: 0.7rem;"></i>
+                    </span>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="showView('records')">
+                        <i class="bi bi-journal-medical me-1"></i>View All Records
+                    </button>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-lg-10 col-xl-9 mx-auto">
                     <div class="card shadow-sm patient-record">
                         <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 fw-bold fs-6 fs-md-5">
                                 <i class="bi bi-plus-square-fill me-2"></i>
-                                Log New <span class="category-label">Procedure</span>
+                                Log <span class="category-label">Procedure</span> Record
                             </h5>
                             <span class="badge bg-white text-success fw-bold px-2 py-1" style="font-size: 0.75rem;">Fast Entry</span>
                         </div>
@@ -258,7 +325,7 @@
                             </div>
 
                             <form id="procedureForm">
-                                <input type="hidden" id="category" name="category" value="">
+                                <input type="hidden" id="category" name="category" value="Major">
                                 <input type="hidden" id="editingRecordId" name="editingRecordId" value="">
                                 
                                 <div class="row g-2 g-md-3">
@@ -320,7 +387,7 @@
                                     <datalist id="procedureList"></datalist>
                                 </div>
 
-                                <!-- Tactile Performance Status Selector -->
+                                <!-- Performance Status Selector -->
                                 <div class="mb-3">
                                     <label class="form-label">
                                         <i class="bi bi-check2-square text-primary"></i>Performance Status <small class="text-muted">(Tap all that apply)</small>
@@ -366,7 +433,7 @@
                                         <label for="hospital" class="form-label">
                                             <i class="bi bi-hospital text-primary"></i>Hospital / Institution
                                         </label>
-                                        <input type="text" class="form-control" id="hospital" placeholder="e.g. YMC Mangalore / GMC Thrissur">
+                                        <input type="text" class="form-control" id="hospital" placeholder="Hospital name">
                                     </div>
 
                                     <div class="col-12 col-md-6 mb-2 mb-md-3">
@@ -395,8 +462,96 @@
             </div>
         </section>
 
-        <!-- Procedure Records Section -->
-        <section id="procedure-records" class="mb-5">
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: PROCEDURE RECORDS FEED & TABLE     -->
+        <!-- ========================================== -->
+        <section id="view-records" class="view-section d-none mb-5">
+            <!-- Context Header Banner -->
+            <div class="context-strip">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showView('home')">
+                        <i class="bi bi-arrow-left me-1"></i>Home Dashboard
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success" onclick="showView('add')">
+                        <i class="bi bi-plus-circle me-1"></i>Add Log
+                    </button>
+                </div>
+
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!-- Institution Filter Dropdown -->
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small fw-bold text-muted"><i class="bi bi-hospital"></i></span>
+                        <select class="form-select form-select-sm" id="recordsFilterInstitution" onchange="filterRecordsByInstitution(this.value)" style="width: auto; max-width: 200px;">
+                            <option value="All">All Institutions</option>
+                            <option value="Yenepoya Medical College">Yenepoya Medical College</option>
+                            <option value="Yenepoya Training Period">Yenepoya Training Period</option>
+                            <option value="Thrissur Medical College">Thrissur Medical College</option>
+                            <option value="Calicut Medical College">Calicut Medical College</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Filter Dropdown -->
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small fw-bold text-muted"><i class="bi bi-tag"></i></span>
+                        <select class="form-select form-select-sm" id="recordsFilterCategory" onchange="filterRecordsByCategory(this.value)" style="width: auto;">
+                            <option value="Major">Major</option>
+                            <option value="Minor">Minor</option>
+                            <option value="All">All</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats Metrics Strip -->
+            <div class="row g-2 mb-3 mb-md-4" id="statsRow">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card" onclick="filterByRole('all')" id="statCardAll">
+                        <div class="stat-icon bg-primary text-white">
+                            <i class="bi bi-collection-fill"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number text-primary" id="statTotalCount">0</div>
+                            <div class="stat-label">Total Logged</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card" onclick="filterByRole('independent')" id="statCardInd">
+                        <div class="stat-icon" style="background: #d1fae5; color: #059669;">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number" style="color: #059669;" id="statIndCount">0</div>
+                            <div class="stat-label">Independent</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card" onclick="filterByRole('supervised')" id="statCardSup">
+                        <div class="stat-icon" style="background: #dbeafe; color: #1d4ed8;">
+                            <i class="bi bi-person-badge-fill"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number" style="color: #1d4ed8;" id="statSupCount">0</div>
+                            <div class="stat-label">Supervised</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card" onclick="filterByRole('assisted')" id="statCardAsst">
+                        <div class="stat-icon" style="background: #fef3c7; color: #b45309;">
+                            <i class="bi bi-hand-thumbs-up-fill"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number" style="color: #b45309;" id="statAsstCount">0</div>
+                            <div class="stat-label">Assisted</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Records Card -->
             <div class="row">
                 <div class="col-12">
                     <div class="card shadow-sm patient-record">
@@ -478,25 +633,123 @@
 
     <!-- Sticky Bottom Navigation Bar for Mobile -->
     <div class="mobile-bottom-nav d-md-none">
-        <a href="#add-procedure" class="mobile-nav-item">
+        <a href="#" class="mobile-nav-item" onclick="showView('home')">
+            <i class="bi bi-house-door-fill text-primary"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="mobile-nav-item" onclick="showView('add')">
             <i class="bi bi-plus-circle-fill text-success"></i>
             <span>Add</span>
         </a>
-        <a href="#procedure-records" class="mobile-nav-item">
+        <a href="#" class="mobile-nav-item" onclick="showView('records')">
             <i class="bi bi-journal-medical text-primary"></i>
             <span>Records</span>
         </a>
         <a href="#" class="mobile-nav-item" onclick="showPrintRangeModal()">
             <i class="bi bi-printer text-info"></i>
-            <span>Print PDF</span>
+            <span>Print</span>
         </a>
-        <a href="#" class="mobile-nav-item" onclick="changeCategory()">
-            <i class="bi bi-arrow-repeat text-warning"></i>
-            <span>Category</span>
+        <a href="#" class="mobile-nav-item" onclick="changeInstitution()">
+            <i class="bi bi-hospital text-indigo" style="color: #4338ca;"></i>
+            <span>Hospital</span>
         </a>
     </div>
 
-    <!-- Success Modal -->
+    <!-- ========================================== -->
+    <!-- MODALS                                     -->
+    <!-- ========================================== -->
+
+    <!-- 1. Institution Selector Modal -->
+    <div class="modal fade" id="institutionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%);">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-hospital me-2"></i>Select Medical Institution
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3 p-md-4">
+                    <p class="text-muted small mb-3">Choose the active hospital institution for logging and filtering records:</p>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Yenepoya Medical College')">
+                            <div>
+                                <i class="bi bi-hospital-fill me-2 fs-4 text-primary"></i>
+                                <strong class="fs-6 d-block text-dark">Yenepoya Medical College</strong>
+                                <small class="text-muted">YMC Mangalore (Default Logbook)</small>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+
+                        <button class="btn btn-outline-secondary p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Yenepoya Training Period')">
+                            <div>
+                                <i class="bi bi-award-fill me-2 fs-4 text-indigo" style="color: #4f46e5;"></i>
+                                <strong class="fs-6 d-block text-dark">Yenepoya Training Period</strong>
+                                <small class="text-muted">Training & Fellowship Duration</small>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+
+                        <button class="btn btn-outline-success p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Thrissur Medical College')">
+                            <div>
+                                <i class="bi bi-building me-2 fs-4 text-success"></i>
+                                <strong class="fs-6 d-block text-dark">Thrissur Medical College</strong>
+                                <small class="text-muted">Govt Medical College, Thrissur (GMC Thrissur)</small>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+
+                        <button class="btn btn-outline-info p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Calicut Medical College')">
+                            <div>
+                                <i class="bi bi-building-fill me-2 fs-4 text-info"></i>
+                                <strong class="fs-6 d-block text-dark">Calicut Medical College</strong>
+                                <small class="text-muted">Govt Medical College, Kozhikode / Calicut (GMC Calicut)</small>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Category Selector Modal -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-clipboard2-pulse me-2"></i>Select Procedure Category
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4 px-3">
+                    <p class="text-muted mb-4">Choose which logbook records you want to view and manage:</p>
+                    <div class="d-grid gap-3 col-md-10 mx-auto">
+                        <button class="btn btn-outline-primary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Major')">
+                            <div>
+                                <i class="bi bi-heart-pulse-fill me-2 fs-4 text-primary"></i>
+                                <span class="fw-bold text-dark">Major Procedures</span>
+                                <div class="text-muted small">Surgeries, RIRS, URSL, TURP, Nephrectomy</div>
+                            </div>
+                            <i class="bi bi-chevron-right fs-5"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Minor')">
+                            <div>
+                                <i class="bi bi-bandaid-fill me-2 fs-4 text-info"></i>
+                                <span class="fw-bold text-dark">Minor Procedures</span>
+                                <div class="text-muted small">Biopsy, Catheterization, Drainage, Dressing</div>
+                            </div>
+                            <i class="bi bi-chevron-right fs-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Success Modal -->
     <div class="modal fade" id="successModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg border-0">
@@ -517,7 +770,7 @@
         </div>
     </div>
 
-    <!-- Procedure Details Modal -->
+    <!-- 4. Procedure Details Modal -->
     <div class="modal fade" id="procedureModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content shadow-lg border-0">
@@ -548,7 +801,7 @@
         </div>
     </div>
 
-    <!-- Print Date Range Modal -->
+    <!-- 5. Print Date Range Modal -->
     <div class="modal fade" id="printRangeModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg border-0">
@@ -560,6 +813,18 @@
                 </div>
                 <div class="modal-body p-3 p-md-4">
                     <form id="printRangeForm">
+                        <div class="mb-3">
+                            <label for="printInstitution" class="form-label">
+                                <i class="bi bi-hospital text-primary"></i>Medical Institution
+                            </label>
+                            <select class="form-select" id="printInstitution">
+                                <option value="All">All Institutions</option>
+                                <option value="Yenepoya Medical College">Yenepoya Medical College (YMC Mangalore)</option>
+                                <option value="Yenepoya Training Period">Yenepoya Training Period</option>
+                                <option value="Thrissur Medical College">Thrissur Medical College (GMC Thrissur)</option>
+                                <option value="Calicut Medical College">Calicut Medical College (GMC Calicut)</option>
+                            </select>
+                        </div>
                         <div class="mb-3">
                             <label for="printCategory" class="form-label">
                                 <i class="bi bi-tag text-primary"></i>Procedure Category
@@ -616,45 +881,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JavaScript -->
     <script src="script.js"></script>
-    <script>
-        // Interactive tactile checkbox tiles helper
-        function toggleTileStyle(id) {
-            const cb = document.getElementById(id);
-            if (!cb) return;
-            const tileMap = {
-                'observed': 'tileObserved',
-                'assisted': 'tileAssisted',
-                'performedUnderSupervision': 'tileSupervised',
-                'independentlyPerformed': 'tileIndependent'
-            };
-            const classMap = {
-                'observed': 'active-observed',
-                'assisted': 'active-assisted',
-                'performedUnderSupervision': 'active-supervised',
-                'independentlyPerformed': 'active-independent'
-            };
-            const tile = document.getElementById(tileMap[id]);
-            if (tile) {
-                if (cb.checked) {
-                    tile.classList.add(classMap[id]);
-                } else {
-                    tile.classList.remove(classMap[id]);
-                }
-            }
-        }
-        
-        // Initialize category on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('procedureDate').valueAsDate = new Date();
-            const savedCategory = sessionStorage.getItem('logbookCategory');
-            if (savedCategory) {
-                applyCategory(savedCategory);
-            } else {
-                const modalEl = document.getElementById('categoryModal');
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-            }
-        });
-    </script>
 </body>
 </html>
