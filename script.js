@@ -1311,6 +1311,9 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
     const isThrissur = selectedInstitution === 'Thrissur Medical College';
     const isCalicut = selectedInstitution === 'Calicut Medical College';
     
+    // Fallback for period if not provided
+    const periodDisplay = dateRangeText || 'Full Duration';
+    
     // Logo markup for Yenepoya institutions
     const logoImg = `<img src="logo.jpg" alt="Yenepoya University Logo" style="height: 75px; max-width: 80px; object-fit: contain;" onerror="this.style.display='none'">`;
     
@@ -1332,15 +1335,16 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
                     </tr>
                 </table>
                 
-                <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                    <div>
-                        <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Consultant Urologist
+                <div style="margin-top: 8px; padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; line-height: 1.5;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <span><strong>Name:</strong> Dr. Shabeel Sulaiman</span>
+                        <span><strong>Designation:</strong> Consultant Urologist</span>
                     </div>
-                    <div style="color: #475569;">
-                        <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 3px; color: #334155;">
+                        <span><strong>Period:</strong> ${periodDisplay}</span>
+                        <span><strong>Category:</strong> ${selectedCategory} Procedures (${recordCountText})</span>
                     </div>
                 </div>
-                ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
             </div>
         `;
     }
@@ -1368,14 +1372,14 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
                         <span><strong>Name:</strong> Dr. Shabeel Sulaiman, MBBS, MS (General Surgery)</span>
                         <span><strong>Designation:</strong> M.Ch. Urology Resident</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 2px; color: #334155;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 3px; color: #334155;">
                         <span><strong>Training Programme:</strong> Master of Chirurgiae (M.Ch.) in Urology</span>
-                        <span><strong>Training Institution:</strong> Yenepoya Medical College, Mangaluru, India</span>
+                        <span><strong>Training Period:</strong> ${periodDisplay}</span>
                     </div>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 10.5px; color: #64748b; padding: 0 4px;">
-                    <span><strong>Category:</strong> ${selectedCategory} Procedures (${recordCountText} records)</span>
-                    ${dateRangeText ? `<span><strong>Period:</strong> ${dateRangeText}</span>` : ''}
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 3px; color: #334155;">
+                        <span><strong>Training Institution:</strong> Yenepoya Medical College, Mangaluru, India</span>
+                        <span><strong>Category:</strong> ${selectedCategory} Procedures (${recordCountText})</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -1388,15 +1392,16 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
                 <h2 style="margin: 3px 0 0 0; font-size: 13.5px; font-weight: 700; color: #059669; text-transform: uppercase;">DEPARTMENT OF UROLOGY</h2>
                 <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">GOVT. MEDICAL COLLEGE, THRISSUR</h2>
                 
-                <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                    <div>
-                        <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Assistant Professor of Urology
+                <div style="margin-top: 8px; padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; line-height: 1.5; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <span><strong>Name:</strong> Dr. Shabeel Sulaiman</span>
+                        <span><strong>Designation:</strong> Assistant Professor of Urology</span>
                     </div>
-                    <div style="color: #475569;">
-                        <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 3px; color: #334155;">
+                        <span><strong>Posting Period:</strong> ${periodDisplay}</span>
+                        <span><strong>Category:</strong> ${selectedCategory} Procedures (${recordCountText})</span>
                     </div>
                 </div>
-                ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
             </div>
         `;
     }
@@ -1408,15 +1413,16 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
                 <h2 style="margin: 3px 0 0 0; font-size: 13.5px; font-weight: 700; color: #0284c7; text-transform: uppercase;">DEPARTMENT OF UROLOGY</h2>
                 <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">GOVT. MEDICAL COLLEGE, CALICUT (KOZHIKODE)</h2>
                 
-                <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                    <div>
-                        <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Assistant Professor of Urology
+                <div style="margin-top: 8px; padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; line-height: 1.5; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <span><strong>Name:</strong> Dr. Shabeel Sulaiman</span>
+                        <span><strong>Designation:</strong> Assistant Professor of Urology</span>
                     </div>
-                    <div style="color: #475569;">
-                        <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 3px; color: #334155;">
+                        <span><strong>Posting Period:</strong> ${periodDisplay}</span>
+                        <span><strong>Category:</strong> ${selectedCategory} Procedures (${recordCountText})</span>
                     </div>
                 </div>
-                ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
             </div>
         `;
     }
@@ -1428,15 +1434,16 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
             <h2 style="margin: 3px 0 0 0; font-size: 13.5px; font-weight: 700; color: #0284c7; text-transform: uppercase;">DEPARTMENT OF UROLOGY</h2>
             <h3 style="margin: 2px 0 0 0; font-size: 13px; font-weight: 700; color: #111827; text-transform: uppercase;">LOGBOOK OF DR. SHABEEL SULAIMAN</h3>
             
-            <div style="margin-top: 8px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                <div>
-                    <strong>Name:</strong> Dr. Shabeel Sulaiman &nbsp;|&nbsp; <strong>Designation:</strong> Consultant Urologist
+            <div style="margin-top: 8px; padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; line-height: 1.5; text-align: left;">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                    <span><strong>Name:</strong> Dr. Shabeel Sulaiman</span>
+                    <span><strong>Designation:</strong> Consultant Urologist</span>
                 </div>
-                <div style="color: #475569;">
-                    <strong>Category:</strong> ${selectedCategory} Procedures &nbsp;|&nbsp; <strong>Total:</strong> ${recordCountText}
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 3px; color: #334155;">
+                    <span><strong>Period:</strong> ${periodDisplay}</span>
+                    <span><strong>Category:</strong> ${selectedCategory} Procedures (${recordCountText})</span>
                 </div>
             </div>
-            ${dateRangeText ? `<div style="text-align: center; margin-top: 4px; font-size: 10.5px; color: #64748b;"><strong>Period:</strong> ${dateRangeText}</div>` : ''}
         </div>
     `;
 }
