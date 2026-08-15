@@ -138,13 +138,6 @@ function showView(viewName) {
         // Refresh home stats
         updateHeroStats();
     }
-
-    // Refresh AOS animations
-    if (typeof AOS !== 'undefined') {
-        setTimeout(() => {
-            AOS.refresh();
-        }, 100);
-    }
 }
 
 // Institution Management
@@ -764,14 +757,13 @@ function displayRecords(recordsToDisplay) {
     
     // 2. Render Mobile Cards Feed
     if (mobileContainer) {
-        mobileContainer.innerHTML = list.map((record, idx) => {
+        mobileContainer.innerHTML = list.map(record => {
             const obs = (record.observed || '').toString().toLowerCase() === 'yes';
             const asst = (record.assisted || '').toString().toLowerCase() === 'yes';
             const sup = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
             const ind = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
             const recId = escapeHtml(record.id || record.timestamp || '');
             const mappedInst = normalizeInstitution(record.hospital);
-            const delay = Math.min((idx % 8) * 60, 450);
             
             const ageSex = [
                 record.age ? `${record.age} yrs` : '',
@@ -779,7 +771,7 @@ function displayRecords(recordsToDisplay) {
             ].filter(Boolean).join(' • ');
 
             return `
-                <div class="mobile-card" data-aos="fade-up" data-aos-delay="${delay}">
+                <div class="mobile-card">
                     <div class="mobile-card-header">
                         <div>
                             <div class="mobile-patient-name">
@@ -835,12 +827,6 @@ function displayRecords(recordsToDisplay) {
     
     // Ensure correct view mode is visible
     switchViewMode(currentViewMode);
-
-    if (typeof AOS !== 'undefined') {
-        setTimeout(() => {
-            AOS.refresh();
-        }, 100);
-    }
 }
 
 function filterRecords(searchTerm) {

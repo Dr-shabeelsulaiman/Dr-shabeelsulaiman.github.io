@@ -5,32 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dr. Shabeel Sulaiman's Logbook - Surgical Procedure Log</title>
     
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Inter (Best Mobile UI Font) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <!-- AOS Animation CSS -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Authentication Check -->
     <script>
+        // Check if user is authenticated
         if (sessionStorage.getItem('authenticated') !== 'true') {
             window.location.href = 'login.html';
         }
         
+        // Logout function
         function logout() {
             sessionStorage.removeItem('authenticated');
             window.location.href = 'login.html';
         }
         
+        // Prevent back button after logout
         window.addEventListener('pageshow', function(event) {
             if (event.persisted || sessionStorage.getItem('authenticated') !== 'true') {
                 window.location.href = 'login.html';
@@ -39,10 +40,10 @@
     </script>
     
     <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm" data-aos="fade-down" data-aos-duration="400">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid container-xl">
             <a class="navbar-brand text-white" href="#" onclick="showView('home')">
-                <i class="bi bi-clipboard2-pulse-fill me-2 fs-5"></i>
+                <i class="bi bi-clipboard2-pulse-fill me-2"></i>
                 <span>Dr. Shabeel's Logbook</span>
             </a>
             
@@ -116,53 +117,53 @@
         <!-- ========================================== -->
         <section id="view-home" class="view-section">
             <!-- Hero Welcome Card -->
-            <div class="hero-card" data-aos="fade-up" data-aos-duration="600">
+            <div class="hero-card">
                 <div class="row align-items-center">
                     <div class="col-md-7">
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <span class="hero-badge"><i class="bi bi-award-fill me-1 text-warning"></i>Department of Urology</span>
-                            <span class="hero-badge"><i class="bi bi-shield-check me-1 text-info"></i>Verified Logbook</span>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-white text-primary fw-bold px-2 py-1">Department of Urology</span>
+                            <span class="badge bg-info text-white fw-bold px-2 py-1">Surgical Logbook</span>
                         </div>
-                        <h2 class="fw-bold mb-1 display-6 fs-3 fs-md-2">Dr. Shabeel Sulaiman</h2>
-                        <p class="text-white-50 mb-3 small">Surgical and clinical procedure logbook repository.</p>
+                        <h3 class="fw-bold mb-1">Dr. Shabeel Sulaiman</h3>
+                        <p class="text-white-50 mb-3 small">Track, manage, and print your surgical and clinical procedure records.</p>
                         
                         <div class="d-flex flex-wrap gap-2">
-                            <div class="bg-white bg-opacity-15 rounded-3 px-3 py-2 border border-white border-opacity-25 cursor-pointer shadow-sm" onclick="changeInstitution()" role="button" data-aos="zoom-in" data-aos-delay="100">
-                                <small class="text-white-50 d-block fw-bold" style="font-size: 0.7rem;">SELECTED INSTITUTION</small>
+                            <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2 border border-white border-opacity-25 cursor-pointer" onclick="changeInstitution()" role="button">
+                                <small class="text-white-50 d-block" style="font-size: 0.72rem;">SELECTED INSTITUTION</small>
                                 <strong class="text-white"><i class="bi bi-hospital me-1 text-warning"></i><span id="heroInstitutionText">Yenepoya Medical College</span> <i class="bi bi-pencil-square ms-1 small"></i></strong>
                             </div>
                             
-                            <div class="bg-white bg-opacity-15 rounded-3 px-3 py-2 border border-white border-opacity-25 cursor-pointer shadow-sm" onclick="changeCategory()" role="button" data-aos="zoom-in" data-aos-delay="200">
-                                <small class="text-white-50 d-block fw-bold" style="font-size: 0.7rem;">SELECTED CATEGORY</small>
+                            <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2 border border-white border-opacity-25 cursor-pointer" onclick="changeCategory()" role="button">
+                                <small class="text-white-50 d-block" style="font-size: 0.72rem;">SELECTED CATEGORY</small>
                                 <strong class="text-white"><i class="bi bi-tag-fill me-1 text-warning"></i><span id="heroCategoryText">Major Procedures</span> <i class="bi bi-pencil-square ms-1 small"></i></strong>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-md-5 mt-4 mt-md-0">
+                    <div class="col-md-5 mt-3 mt-md-0">
                         <div class="row g-2 text-dark">
-                            <div class="col-6" data-aos="zoom-in" data-aos-delay="150">
-                                <div class="hero-stat-card">
-                                    <div class="fs-3 fw-bold text-primary" id="heroTotalCount">0</div>
-                                    <small class="text-muted fw-bold">Total Logged</small>
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-primary" id="heroTotalCount">0</div>
+                                    <small class="text-muted fw-semibold">Total Logged</small>
                                 </div>
                             </div>
-                            <div class="col-6" data-aos="zoom-in" data-aos-delay="250">
-                                <div class="hero-stat-card">
-                                    <div class="fs-3 fw-bold text-success" id="heroIndCount">0</div>
-                                    <small class="text-muted fw-bold">Independent</small>
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-success" id="heroIndCount">0</div>
+                                    <small class="text-muted fw-semibold">Independent</small>
                                 </div>
                             </div>
-                            <div class="col-6" data-aos="zoom-in" data-aos-delay="350">
-                                <div class="hero-stat-card">
-                                    <div class="fs-3 fw-bold text-info" id="heroSupCount">0</div>
-                                    <small class="text-muted fw-bold">Supervised</small>
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-info" id="heroSupCount">0</div>
+                                    <small class="text-muted fw-semibold">Supervised</small>
                                 </div>
                             </div>
-                            <div class="col-6" data-aos="zoom-in" data-aos-delay="450">
-                                <div class="hero-stat-card">
-                                    <div class="fs-3 fw-bold text-warning" id="heroAsstCount">0</div>
-                                    <small class="text-muted fw-bold">Assisted</small>
+                            <div class="col-6">
+                                <div class="bg-white rounded-3 p-3 text-center shadow-sm">
+                                    <div class="fs-4 fw-bold text-warning" id="heroAsstCount">0</div>
+                                    <small class="text-muted fw-semibold">Assisted</small>
                                 </div>
                             </div>
                         </div>
@@ -173,7 +174,7 @@
             <!-- Action Tiles Grid -->
             <div class="row g-3 mb-4">
                 <!-- Action 1: Add Log -->
-                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="col-md-6 col-lg-4">
                     <div class="action-card" onclick="showView('add')">
                         <div>
                             <div class="action-card-icon" style="background: #ecfdf5; color: #059669;">
@@ -192,7 +193,7 @@
                 </div>
 
                 <!-- Action 2: Show Records -->
-                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="col-md-6 col-lg-4">
                     <div class="action-card" onclick="showView('records')">
                         <div>
                             <div class="action-card-icon" style="background: #eff6ff; color: #1e40af;">
@@ -211,7 +212,7 @@
                 </div>
 
                 <!-- Action 3: Print Reports -->
-                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="col-md-6 col-lg-4">
                     <div class="action-card" onclick="showPrintRangeModal()">
                         <div>
                             <div class="action-card-icon" style="background: #f0f9ff; color: #0284c7;">
@@ -230,7 +231,7 @@
                 </div>
 
                 <!-- Action 4: Select Institute -->
-                <div class="col-md-6 col-lg-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="col-md-6 col-lg-6">
                     <div class="action-card" onclick="changeInstitution()">
                         <div>
                             <div class="action-card-icon" style="background: #e0e7ff; color: #4338ca;">
@@ -238,7 +239,7 @@
                             </div>
                             <div class="action-card-title">
                                 <span>Select Institution</span>
-                                <i class="bi bi-arrow-right" style="color: #4338ca;"></i>
+                                <i class="bi bi-arrow-right text-indigo" style="color: #4338ca;"></i>
                             </div>
                             <p class="action-card-desc">Switch active hospital between Thrissur Medical College, Calicut Medical College, Yenepoya Medical College, or Training Period.</p>
                         </div>
@@ -249,7 +250,7 @@
                 </div>
 
                 <!-- Action 5: Switch Category -->
-                <div class="col-md-6 col-lg-6" data-aos="fade-up" data-aos-delay="500">
+                <div class="col-md-6 col-lg-6">
                     <div class="action-card" onclick="changeCategory()">
                         <div>
                             <div class="action-card-icon" style="background: #fef3c7; color: #b45309;">
@@ -257,7 +258,7 @@
                             </div>
                             <div class="action-card-title">
                                 <span>Switch Category</span>
-                                <i class="bi bi-arrow-right" style="color: #b45309;"></i>
+                                <i class="bi bi-arrow-right text-warning" style="color: #b45309;"></i>
                             </div>
                             <p class="action-card-desc">Switch procedure scope between Major Surgeries (TURP, RIRS, Nephrectomy) and Minor Procedures.</p>
                         </div>
@@ -275,7 +276,7 @@
         <!-- ========================================== -->
         <section id="view-add" class="view-section d-none mb-4 mb-md-5">
             <!-- Context Header Banner -->
-            <div class="context-strip" data-aos="fade-down" data-aos-duration="400">
+            <div class="context-strip">
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showView('home')">
                         <i class="bi bi-arrow-left me-1"></i>Home Dashboard
@@ -300,7 +301,7 @@
             </div>
 
             <div class="row">
-                <div class="col-lg-10 col-xl-9 mx-auto" data-aos="fade-up" data-aos-duration="500">
+                <div class="col-lg-10 col-xl-9 mx-auto">
                     <div class="card shadow-sm patient-record">
                         <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 fw-bold fs-6 fs-md-5">
@@ -467,7 +468,7 @@
         <!-- ========================================== -->
         <section id="view-records" class="view-section d-none mb-5">
             <!-- Context Header Banner -->
-            <div class="context-strip" data-aos="fade-down" data-aos-duration="400">
+            <div class="context-strip">
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showView('home')">
                         <i class="bi bi-arrow-left me-1"></i>Home Dashboard
@@ -503,7 +504,7 @@
             </div>
 
             <!-- Summary Stats Metrics Strip -->
-            <div class="row g-2 mb-3 mb-md-4" id="statsRow" data-aos="fade-up" data-aos-duration="450">
+            <div class="row g-2 mb-3 mb-md-4" id="statsRow">
                 <div class="col-6 col-md-3">
                     <div class="stat-card" onclick="filterByRole('all')" id="statCardAll">
                         <div class="stat-icon bg-primary text-white">
@@ -552,7 +553,7 @@
 
             <!-- Records Card -->
             <div class="row">
-                <div class="col-12" data-aos="fade-up" data-aos-duration="500">
+                <div class="col-12">
                     <div class="card shadow-sm patient-record">
                         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
@@ -649,7 +650,7 @@
             <span>Print</span>
         </a>
         <a href="#" class="mobile-nav-item" onclick="changeInstitution()">
-            <i class="bi bi-hospital" style="color: #4338ca;"></i>
+            <i class="bi bi-hospital text-indigo" style="color: #4338ca;"></i>
             <span>Hospital</span>
         </a>
     </div>
@@ -661,7 +662,7 @@
     <!-- 1. Institution Selector Modal -->
     <div class="modal fade" id="institutionModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header text-white" style="background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%);">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-hospital me-2"></i>Select Medical Institution
@@ -672,7 +673,7 @@
                     <p class="text-muted small mb-3">Choose the active hospital institution for logging and filtering records:</p>
                     
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Yenepoya Medical College')" style="border-radius: 14px;">
+                        <button class="btn btn-outline-primary p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Yenepoya Medical College')">
                             <div>
                                 <i class="bi bi-hospital-fill me-2 fs-4 text-primary"></i>
                                 <strong class="fs-6 d-block text-dark">Yenepoya Medical College</strong>
@@ -681,16 +682,16 @@
                             <i class="bi bi-chevron-right text-muted"></i>
                         </button>
 
-                        <button class="btn btn-outline-secondary p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Yenepoya Training Period')" style="border-radius: 14px;">
+                        <button class="btn btn-outline-secondary p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Yenepoya Training Period')">
                             <div>
-                                <i class="bi bi-award-fill me-2 fs-4" style="color: #4f46e5;"></i>
+                                <i class="bi bi-award-fill me-2 fs-4 text-indigo" style="color: #4f46e5;"></i>
                                 <strong class="fs-6 d-block text-dark">Yenepoya Training Period</strong>
                                 <small class="text-muted">Training & Fellowship Duration</small>
                             </div>
                             <i class="bi bi-chevron-right text-muted"></i>
                         </button>
 
-                        <button class="btn btn-outline-success p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Thrissur Medical College')" style="border-radius: 14px;">
+                        <button class="btn btn-outline-success p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Thrissur Medical College')">
                             <div>
                                 <i class="bi bi-building me-2 fs-4 text-success"></i>
                                 <strong class="fs-6 d-block text-dark">Thrissur Medical College</strong>
@@ -699,7 +700,7 @@
                             <i class="bi bi-chevron-right text-muted"></i>
                         </button>
 
-                        <button class="btn btn-outline-info p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Calicut Medical College')" style="border-radius: 14px;">
+                        <button class="btn btn-outline-info p-3 text-start d-flex align-items-center justify-content-between border-2" onclick="selectInstitution('Calicut Medical College')">
                             <div>
                                 <i class="bi bi-building-fill me-2 fs-4 text-info"></i>
                                 <strong class="fs-6 d-block text-dark">Calicut Medical College</strong>
@@ -716,7 +717,7 @@
     <!-- 2. Category Selector Modal -->
     <div class="modal fade" id="categoryModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-clipboard2-pulse me-2"></i>Select Procedure Category
@@ -726,7 +727,7 @@
                 <div class="modal-body text-center py-4 px-3">
                     <p class="text-muted mb-4">Choose which logbook records you want to view and manage:</p>
                     <div class="d-grid gap-3 col-md-10 mx-auto">
-                        <button class="btn btn-outline-primary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Major')" style="border-radius: 14px;">
+                        <button class="btn btn-outline-primary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Major')">
                             <div>
                                 <i class="bi bi-heart-pulse-fill me-2 fs-4 text-primary"></i>
                                 <span class="fw-bold text-dark">Major Procedures</span>
@@ -734,7 +735,7 @@
                             </div>
                             <i class="bi bi-chevron-right fs-5"></i>
                         </button>
-                        <button class="btn btn-outline-secondary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Minor')" style="border-radius: 14px;">
+                        <button class="btn btn-outline-secondary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Minor')">
                             <div>
                                 <i class="bi bi-bandaid-fill me-2 fs-4 text-info"></i>
                                 <span class="fw-bold text-dark">Minor Procedures</span>
@@ -751,7 +752,7 @@
     <!-- 3. Success Modal -->
     <div class="modal fade" id="successModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-check-circle-fill me-2"></i>Success
@@ -762,7 +763,7 @@
                     <i class="bi bi-check2-circle text-success fs-1 mb-2 d-block"></i>
                     <p id="successMessage" class="fs-6 fw-semibold mb-0">Procedure record saved successfully!</p>
                 </div>
-                <div class="modal-footer justify-content-center bg-light">
+                <div class="modal-footer justify-content-center">
                     <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">OK</button>
                 </div>
             </div>
@@ -772,7 +773,7 @@
     <!-- 4. Procedure Details Modal -->
     <div class="modal fade" id="procedureModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-person-badge-fill me-2"></i>Procedure Details
@@ -780,7 +781,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-3 p-md-4" id="procedureDetails">
-                    <!-- Procedure details loaded here -->
+                    <!-- Procedure details will be loaded here -->
                 </div>
                 <div class="modal-footer d-flex justify-content-between flex-wrap gap-2 bg-light">
                     <button type="button" class="btn btn-outline-danger" id="modalDeleteBtn" onclick="deleteRecordFromModal()">
@@ -803,7 +804,7 @@
     <!-- 5. Print Date Range Modal -->
     <div class="modal fade" id="printRangeModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-printer-fill me-2"></i>Generate PDF Report
@@ -878,22 +879,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- AOS JS -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <!-- Custom JavaScript -->
     <script src="script.js"></script>
-    <script>
-        // Initialize AOS
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof AOS !== 'undefined') {
-                AOS.init({
-                    duration: 550,
-                    easing: 'ease-out-cubic',
-                    once: false,
-                    offset: 50
-                });
-            }
-        });
-    </script>
 </body>
 </html>
