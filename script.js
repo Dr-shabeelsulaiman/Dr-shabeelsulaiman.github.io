@@ -1489,7 +1489,7 @@ function downloadCurrentPreviewHtml() {
     showSuccess('Report downloaded successfully! You can open it in any browser to view or print.');
 }
 
-function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
+function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'Yenepoya Medical College') {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
     const dateRangeText = `${startDateFormatted} to ${endDateFormatted}`;
@@ -1514,20 +1514,23 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
     currentPreviewHtml = fullReportHtml;
     currentPreviewFilename = `procedure-report-${startDate}-to-${endDate}.html`;
     
-    // Inject into preview modal and print container
+    // Inject into dedicated page view, preview modal, and background print container
+    const pagePreviewEl = document.getElementById('pagePrintPreviewContent');
     const previewEl = document.getElementById('printPreviewContent');
     const printEl = document.getElementById('printContainer');
+    if (pagePreviewEl) pagePreviewEl.innerHTML = fullReportHtml;
     if (previewEl) previewEl.innerHTML = fullReportHtml;
     if (printEl) printEl.innerHTML = fullReportHtml;
     
-    // Open Print Preview Modal
-    const previewModalEl = document.getElementById('printPreviewModal');
-    if (previewModalEl) {
-        const previewModal = bootstrap.Modal.getOrCreateInstance(previewModalEl);
-        previewModal.show();
-    } else {
-        executeNativePrint();
-    }
+    // Close any open modals
+    document.querySelectorAll('.modal.show').forEach(m => {
+        const inst = bootstrap.Modal.getInstance(m);
+        if (inst) inst.hide();
+    });
+    
+    // Switch to dedicated full-page print preview view
+    showView('printpreview');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
@@ -1618,18 +1621,22 @@ function printRecord(recordId) {
     currentPreviewHtml = recordDetailsHtml;
     currentPreviewFilename = `procedure-${record.name || 'record'}-${visitDateFormatted}.html`;
 
+    const pagePreviewEl = document.getElementById('pagePrintPreviewContent');
     const previewEl = document.getElementById('printPreviewContent');
     const printEl = document.getElementById('printContainer');
+    if (pagePreviewEl) pagePreviewEl.innerHTML = recordDetailsHtml;
     if (previewEl) previewEl.innerHTML = recordDetailsHtml;
     if (printEl) printEl.innerHTML = recordDetailsHtml;
 
-    const previewModalEl = document.getElementById('printPreviewModal');
-    if (previewModalEl) {
-        const previewModal = bootstrap.Modal.getOrCreateInstance(previewModalEl);
-        previewModal.show();
-    } else {
-        executeNativePrint();
-    }
+    // Close any open modals
+    document.querySelectorAll('.modal.show').forEach(m => {
+        const inst = bootstrap.Modal.getInstance(m);
+        if (inst) inst.hide();
+    });
+
+    // Switch to dedicated full-page print preview view
+    showView('printpreview');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function generateCompactReport(patientsToPrint) {

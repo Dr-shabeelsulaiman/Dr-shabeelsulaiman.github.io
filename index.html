@@ -175,96 +175,101 @@
             <div class="row g-3 mb-4">
                 <!-- Action 1: Add Log -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="action-card" onclick="showView('add')">
-                        <div>
-                            <div class="action-card-icon" style="background: #ecfdf5; color: #059669;">
+                    <div class="action-card action-card-add" onclick="showView('add')">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="action-card-icon icon-add">
                                 <i class="bi bi-plus-circle-fill"></i>
                             </div>
-                            <div class="action-card-title">
-                                <span>Add Procedure Log</span>
-                                <i class="bi bi-arrow-right text-success"></i>
+                            <div class="flex-grow-1">
+                                <div class="action-card-title mb-1">
+                                    <span>Add Procedure Log</span>
+                                    <i class="bi bi-arrow-right-short fs-3 text-success"></i>
+                                </div>
+                                <span class="action-card-badge badge-add">
+                                    <i class="bi bi-lightning-fill text-warning"></i> Fast Log Entry
+                                </span>
                             </div>
-                            <p class="action-card-desc">Log a new surgical or minor procedure with patient details, diagnosis, and performance status.</p>
                         </div>
-                        <span class="action-card-badge" style="background: #d1fae5; color: #065f46;">
-                            <i class="bi bi-lightning-fill"></i> Fast Data Entry
-                        </span>
                     </div>
                 </div>
 
                 <!-- Action 2: Show Records -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="action-card" onclick="showView('records')">
-                        <div>
-                            <div class="action-card-icon" style="background: #eff6ff; color: #1e40af;">
+                    <div class="action-card action-card-records" onclick="showView('records')">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="action-card-icon icon-records">
                                 <i class="bi bi-journal-medical"></i>
                             </div>
-                            <div class="action-card-title">
-                                <span>Show Records</span>
-                                <i class="bi bi-arrow-right text-primary"></i>
+                            <div class="flex-grow-1">
+                                <div class="action-card-title mb-1">
+                                    <span>Show Records</span>
+                                    <i class="bi bi-arrow-right-short fs-3 text-primary"></i>
+                                </div>
+                                <span class="action-card-badge badge-records">
+                                    <i class="bi bi-folder2-open"></i> <span id="badgeRecordCount">View Records</span>
+                                </span>
                             </div>
-                            <p class="action-card-desc">Browse, search, edit, view details, or delete previously entered procedure logs in card/table view.</p>
                         </div>
-                        <span class="action-card-badge" style="background: #dbeafe; color: #1e40af;">
-                            <i class="bi bi-eye-fill"></i> <span id="badgeRecordCount">View Records</span>
-                        </span>
                     </div>
                 </div>
 
                 <!-- Action 3: Print Reports -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="action-card" onclick="showPrintRangeModal()">
-                        <div>
-                            <div class="action-card-icon" style="background: #f0f9ff; color: #0284c7;">
+                    <div class="action-card action-card-print" onclick="showPrintRangeModal()">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="action-card-icon icon-print">
                                 <i class="bi bi-printer-fill"></i>
                             </div>
-                            <div class="action-card-title">
-                                <span>Print Reports & PDF</span>
-                                <i class="bi bi-arrow-right text-info"></i>
+                            <div class="flex-grow-1">
+                                <div class="action-card-title mb-1">
+                                    <span>Print Reports</span>
+                                    <i class="bi bi-arrow-right-short fs-3 text-info"></i>
+                                </div>
+                                <span class="action-card-badge badge-print">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger"></i> PDF & A4 Prints
+                                </span>
                             </div>
-                            <p class="action-card-desc">Generate official logbook printouts and PDF reports filtered by institution, category, and date range.</p>
                         </div>
-                        <span class="action-card-badge" style="background: #cffafe; color: #155e75;">
-                            <i class="bi bi-file-earmark-pdf-fill"></i> PDF Generator
-                        </span>
                     </div>
                 </div>
 
                 <!-- Action 4: Select Institute -->
                 <div class="col-md-6 col-lg-6">
-                    <div class="action-card" onclick="changeInstitution()">
-                        <div>
-                            <div class="action-card-icon" style="background: #e0e7ff; color: #4338ca;">
+                    <div class="action-card action-card-inst" onclick="changeInstitution()">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="action-card-icon icon-inst">
                                 <i class="bi bi-hospital-fill"></i>
                             </div>
-                            <div class="action-card-title">
-                                <span>Select Institution</span>
-                                <i class="bi bi-arrow-right text-indigo" style="color: #4338ca;"></i>
+                            <div class="flex-grow-1">
+                                <div class="action-card-title mb-1">
+                                    <span>Select Institution</span>
+                                    <i class="bi bi-pencil-square fs-6 text-indigo" style="color: #4338ca;"></i>
+                                </div>
+                                <span class="action-card-badge badge-inst">
+                                    <i class="bi bi-geo-alt-fill text-primary"></i> <strong id="actionCardInstName">Yenepoya Medical College</strong>
+                                </span>
                             </div>
-                            <p class="action-card-desc">Switch active hospital between Thrissur Medical College, Calicut Medical College, Yenepoya Medical College, or Training Period.</p>
                         </div>
-                        <span class="action-card-badge" style="background: #e0e7ff; color: #3730a3;">
-                            <i class="bi bi-geo-alt-fill"></i> Current: <strong id="actionCardInstName" class="ms-1">Yenepoya Medical College</strong>
-                        </span>
                     </div>
                 </div>
 
                 <!-- Action 5: Switch Category -->
                 <div class="col-md-6 col-lg-6">
-                    <div class="action-card" onclick="changeCategory()">
-                        <div>
-                            <div class="action-card-icon" style="background: #fef3c7; color: #b45309;">
+                    <div class="action-card action-card-cat" onclick="changeCategory()">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="action-card-icon icon-cat">
                                 <i class="bi bi-arrow-repeat"></i>
                             </div>
-                            <div class="action-card-title">
-                                <span>Switch Category</span>
-                                <i class="bi bi-arrow-right text-warning" style="color: #b45309;"></i>
+                            <div class="flex-grow-1">
+                                <div class="action-card-title mb-1">
+                                    <span>Switch Category</span>
+                                    <i class="bi bi-arrow-repeat fs-6 text-warning" style="color: #b45309;"></i>
+                                </div>
+                                <span class="action-card-badge badge-cat">
+                                    <i class="bi bi-tag-fill text-warning"></i> <strong id="actionCardCatName">Major Procedures</strong>
+                                </span>
                             </div>
-                            <p class="action-card-desc">Switch procedure scope between Major Surgeries (TURP, RIRS, Nephrectomy) and Minor Procedures.</p>
                         </div>
-                        <span class="action-card-badge" style="background: #fef3c7; color: #92400e;">
-                            <i class="bi bi-tag-fill"></i> Current: <strong id="actionCardCatName" class="ms-1">Major Procedures</strong>
-                        </span>
                     </div>
                 </div>
             </div>
@@ -629,6 +634,45 @@
                 </div>
             </div>
         </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: DEDICATED PRINT PREVIEW VIEW       -->
+        <!-- ========================================== -->
+        <section id="view-printpreview" class="view-section d-none mb-4 mb-md-5">
+            <!-- Context & Action Bar for Mobile & Desktop -->
+            <div class="card border-0 shadow-sm mb-3 bg-white no-print">
+                <div class="card-body p-2 p-md-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-bold" onclick="showView('home')">
+                            <i class="bi bi-arrow-left me-1"></i> Back
+                        </button>
+                        <h6 class="fw-bold mb-0 text-primary d-none d-sm-inline">
+                            <i class="bi bi-file-earmark-medical-fill me-1 text-warning"></i>Official Logbook Report
+                        </h6>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="downloadCurrentPreviewHtml()">
+                            <i class="bi bi-download me-1"></i> Download HTML
+                        </button>
+                        <button type="button" class="btn btn-success fw-bold px-3 shadow-sm d-flex align-items-center gap-1" onclick="executeNativePrint()">
+                            <i class="bi bi-printer-fill"></i> <span>Print / Save as PDF</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- In-Page A4 Sheet Preview -->
+            <div id="pagePrintPreviewContent" class="bg-white p-3 p-md-4 rounded shadow-sm border mx-auto mb-4" style="max-width: 210mm; min-height: 297mm; font-size: 11.5px;">
+                <!-- Full rendered document will be injected here -->
+            </div>
+
+            <!-- Bottom Print Button for Mobile Easy Reach -->
+            <div class="text-center pb-5 no-print">
+                <button type="button" class="btn btn-success btn-lg fw-bold px-5 shadow" onclick="executeNativePrint()">
+                    <i class="bi bi-printer-fill me-2"></i> Print / Save as PDF
+                </button>
+            </div>
+        </section>
     </div>
 
     <!-- Sticky Bottom Navigation Bar for Mobile -->
@@ -818,11 +862,11 @@
                                 <i class="bi bi-hospital text-primary"></i>Medical Institution
                             </label>
                             <select class="form-select" id="printInstitution">
-                                <option value="All">All Institutions</option>
-                                <option value="Yenepoya Medical College">Yenepoya Medical College (YMC Mangalore)</option>
+                                <option value="Yenepoya Medical College" selected>Yenepoya Medical College (YMC Mangalore)</option>
                                 <option value="Yenepoya Training Period">Yenepoya Training Period</option>
                                 <option value="Thrissur Medical College">Thrissur Medical College (GMC Thrissur)</option>
                                 <option value="Calicut Medical College">Calicut Medical College (GMC Calicut)</option>
+                                <option value="All">All Institutions</option>
                             </select>
                         </div>
                         <div class="mb-3">
