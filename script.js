@@ -1306,10 +1306,16 @@ function printDateRange() {
 // ==========================================
 
 function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordCountText, dateRangeText) {
-    const isYMC = selectedInstitution === 'Yenepoya Medical College';
-    const isYMCTraining = selectedInstitution === 'Yenepoya Training Period';
-    const isThrissur = selectedInstitution === 'Thrissur Medical College';
-    const isCalicut = selectedInstitution === 'Calicut Medical College';
+    let inst = (selectedInstitution || sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College').toString().trim();
+    if (inst === 'All') {
+        inst = sessionStorage.getItem('logbookInstitution') || 'Yenepoya Medical College';
+    }
+    
+    const clean = inst.toLowerCase();
+    const isYMCTraining = clean.includes('training');
+    const isThrissur = clean.includes('thrissur') || clean.includes('tmc');
+    const isCalicut = clean.includes('calicut') || clean.includes('kozhikode') || clean.includes('cmc');
+    const isYMC = !isYMCTraining && !isThrissur && !isCalicut; // Guaranteed Yenepoya Medical College
     
     // Fallback for period if not provided
     const periodDisplay = dateRangeText || 'Full Duration';
