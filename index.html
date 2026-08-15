@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dr. Shabeel Sulaiman's Logbook - Surgical Procedure Log</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,8 +16,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
-    <!-- Animated Styles -->
-    <link rel="stylesheet" href="animated-styles.css">
 </head>
 <body>
     <!-- Authentication Check -->
@@ -54,17 +57,24 @@
         function applyCategory(category) {
             document.getElementById('category').value = category;
             document.querySelectorAll('.category-label').forEach(el => el.textContent = category + ' Procedure');
-            document.getElementById('categoryBadge').classList.remove('d-none');
-            document.getElementById('categoryText').textContent = category + ' Procedures';
+            
+            const catBadge = document.getElementById('categoryBadge');
+            if (catBadge) catBadge.classList.remove('d-none');
+            const catText = document.getElementById('categoryText');
+            if (catText) catText.textContent = category;
+            
             // Update procedure datalist
             const list = document.getElementById('procedureList');
-            list.innerHTML = '';
-            const procedures = category === 'Minor' ? MINOR_PROCEDURES : MAJOR_PROCEDURES;
-            procedures.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p;
-                list.appendChild(opt);
-            });
+            if (list) {
+                list.innerHTML = '';
+                const procedures = category === 'Minor' ? MINOR_PROCEDURES : MAJOR_PROCEDURES;
+                procedures.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    list.appendChild(opt);
+                });
+            }
+            
             // Clear search input when switching category
             const searchInput = document.getElementById('searchInput');
             if (searchInput) searchInput.value = '';
@@ -79,28 +89,38 @@
         const MAJOR_PROCEDURES = [
             'Appendectomy','Cholecystectomy','Hernia Repair','Laparotomy','Thyroidectomy',
             'Mastectomy','Hemicolectomy','Gastrectomy','Nephrectomy','Splenectomy',
-            'Bowel Resection','Exploratory Laparotomy','Liver Resection','Pancreatectomy','Vascular Bypass'
+            'Bowel Resection','Exploratory Laparotomy','Liver Resection','Pancreatectomy','Vascular Bypass',
+            'Right RIRS','Left RIRS','Right URSL','Left URSL','TURP','Right Pyeloplasty','Left Pyeloplasty'
         ];
     </script>
     
     <!-- Category Selector Modal -->
     <div class="modal fade" id="categoryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">
-                        <i class="bi bi-clipboard2-pulse me-2"></i>
-                        Select Procedure Category
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-clipboard2-pulse me-2"></i>Select Procedure Category
                     </h5>
                 </div>
-                <div class="modal-body text-center py-4">
-                    <p class="mb-4">Please select the type of procedure you want to log:</p>
-                    <div class="d-grid gap-3 col-8 mx-auto">
-                        <button class="btn btn-outline-primary btn-lg" onclick="selectCategory('Minor')">
-                            <i class="bi bi-bandaid me-2"></i>Minor Procedure
+                <div class="modal-body text-center py-4 px-3">
+                    <p class="text-muted mb-4">Choose which logbook records you want to view and manage:</p>
+                    <div class="d-grid gap-3 col-md-10 mx-auto">
+                        <button class="btn btn-outline-primary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Major')">
+                            <div>
+                                <i class="bi bi-heart-pulse-fill me-2 fs-4 text-primary"></i>
+                                <span class="fw-bold">Major Procedures</span>
+                                <div class="text-muted small">Surgeries, RIRS, URSL, TURP, Nephrectomy</div>
+                            </div>
+                            <i class="bi bi-chevron-right fs-5"></i>
                         </button>
-                        <button class="btn btn-outline-danger btn-lg" onclick="selectCategory('Major')">
-                            <i class="bi bi-heart-pulse me-2"></i>Major Procedure
+                        <button class="btn btn-outline-secondary btn-lg p-3 text-start d-flex align-items-center justify-content-between" onclick="selectCategory('Minor')">
+                            <div>
+                                <i class="bi bi-bandaid-fill me-2 fs-4 text-info"></i>
+                                <span class="fw-bold">Minor Procedures</span>
+                                <div class="text-muted small">Biopsy, Catheterization, Drainage, Dressing</div>
+                            </div>
+                            <i class="bi bi-chevron-right fs-5"></i>
                         </button>
                     </div>
                 </div>
@@ -108,65 +128,123 @@
         </div>
     </div>
     
-    <!-- Navigation -->
+    <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="bi bi-clipboard2-pulse me-2"></i>
-                Dr. Shabeel Sulaiman's Logbook
+        <div class="container-fluid container-xl">
+            <a class="navbar-brand text-white" href="#">
+                <i class="bi bi-clipboard2-pulse-fill me-2"></i>
+                <span>Dr. Shabeel's Logbook</span>
             </a>
-            <span id="categoryBadge" class="badge bg-warning text-dark fs-6 d-none">
-                <i class="bi bi-tag me-1"></i><span id="categoryText"></span>
-            </span>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            
+            <div class="d-flex align-items-center gap-2">
+                <span id="categoryBadge" class="category-pill cursor-pointer" onclick="changeCategory()" title="Click to switch category">
+                    <i class="bi bi-tag-fill"></i>
+                    <span id="categoryText">Major</span>
+                    <i class="bi bi-chevron-down ms-1" style="font-size: 0.65rem;"></i>
+                </span>
+                
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center mt-2 mt-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#add-procedure">
-                            <i class="bi bi-person-plus me-1"></i>Add Procedure
+                        <a class="nav-link text-white" href="#add-procedure">
+                            <i class="bi bi-plus-circle me-1"></i>Add Procedure
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#procedure-records">
-                            <i class="bi bi-people me-1"></i>Records
+                        <a class="nav-link text-white" href="#procedure-records">
+                            <i class="bi bi-journal-medical me-1"></i>Records
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showPrintRangeModal()">
+                        <a class="nav-link text-white" href="#" onclick="showPrintRangeModal()">
                             <i class="bi bi-printer me-1"></i>Print Report
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="changeCategory()">
+                        <a class="nav-link text-white" href="#" onclick="changeCategory()">
                             <i class="bi bi-arrow-repeat me-1"></i>Switch Category
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-warning" href="#" onclick="logout()">
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-sm btn-outline-light w-100 mt-2 mt-lg-0" onclick="logout()">
                             <i class="bi bi-box-arrow-right me-1"></i>Logout
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="container mt-4" id="mainContent">
-        <!-- Add Procedure Section -->
-        <section id="add-procedure" class="mb-5">
+    <!-- Main Content Container -->
+    <div class="container-xl mt-3 mt-md-4" id="mainContent">
+        
+        <!-- Summary Stats Metrics Strip -->
+        <div class="row g-2 mb-3 mb-md-4" id="statsRow">
+            <div class="col-6 col-md-3">
+                <div class="stat-card" onclick="filterByRole('all')" id="statCardAll">
+                    <div class="stat-icon bg-primary text-white">
+                        <i class="bi bi-collection-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-number text-primary" id="statTotalCount">0</div>
+                        <div class="stat-label">Total Logged</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card" onclick="filterByRole('independent')" id="statCardInd">
+                    <div class="stat-icon" style="background: #d1fae5; color: #059669;">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-number" style="color: #059669;" id="statIndCount">0</div>
+                        <div class="stat-label">Independent</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card" onclick="filterByRole('supervised')" id="statCardSup">
+                    <div class="stat-icon" style="background: #dbeafe; color: #1d4ed8;">
+                        <i class="bi bi-person-badge-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-number" style="color: #1d4ed8;" id="statSupCount">0</div>
+                        <div class="stat-label">Supervised</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card" onclick="filterByRole('assisted')" id="statCardAsst">
+                    <div class="stat-icon" style="background: #fef3c7; color: #b45309;">
+                        <i class="bi bi-hand-thumbs-up-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-number" style="color: #b45309;" id="statAsstCount">0</div>
+                        <div class="stat-label">Assisted</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add / Edit Procedure Form Section -->
+        <section id="add-procedure" class="mb-4 mb-md-5">
             <div class="row">
-                <div class="col-lg-8 mx-auto">
-                    <div class="card shadow patient-record">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">
-                                <i class="bi bi-person-plus-fill me-2"></i>
-                                Add New <span class="category-label">Procedure</span>
+                <div class="col-lg-10 col-xl-9 mx-auto">
+                    <div class="card shadow-sm patient-record">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold fs-6 fs-md-5">
+                                <i class="bi bi-plus-square-fill me-2"></i>
+                                Log New <span class="category-label">Procedure</span>
                             </h5>
+                            <span class="badge bg-white text-success fw-bold px-2 py-1" style="font-size: 0.75rem;">Fast Entry</span>
                         </div>
-                        <div class="card-body">
+                        
+                        <div class="card-body p-3 p-md-4">
                             <!-- Edit Mode Banner -->
                             <div id="editBanner" class="alert alert-warning border-warning d-flex justify-content-between align-items-center mb-3 d-none">
                                 <div>
@@ -183,125 +261,130 @@
                                 <input type="hidden" id="category" name="category" value="">
                                 <input type="hidden" id="editingRecordId" name="editingRecordId" value="">
                                 
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                <div class="row g-2 g-md-3">
+                                    <div class="col-12 col-md-6 mb-2 mb-md-3">
                                         <label for="patientName" class="form-label">
-                                            <i class="bi bi-person me-1"></i>Patient Name
+                                            <i class="bi bi-person text-primary"></i>Patient Name
                                         </label>
-                                        <input type="text" class="form-control" id="patientName">
+                                        <input type="text" class="form-control" id="patientName" placeholder="Full name" autocomplete="off">
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    
+                                    <div class="col-6 col-md-3 mb-2 mb-md-3">
                                         <label for="patientAge" class="form-label">
-                                            <i class="bi bi-calendar me-1"></i>Age *
+                                            <i class="bi bi-calendar-event text-primary"></i>Age *
                                         </label>
-                                        <input type="number" class="form-control" id="patientAge" min="0" max="150" required>
+                                        <input type="number" inputmode="numeric" class="form-control" id="patientAge" min="0" max="150" required placeholder="Years">
                                     </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                    
+                                    <div class="col-6 col-md-3 mb-2 mb-md-3">
                                         <label for="patientSex" class="form-label">
-                                            <i class="bi bi-gender me-1"></i>Sex *
+                                            <i class="bi bi-gender-ambiguous text-primary"></i>Sex *
                                         </label>
                                         <select class="form-select" id="patientSex" required>
-                                            <option value="">Select Sex</option>
+                                            <option value="">Select</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
                                             <option value="Other">Other</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                </div>
+                                
+                                <div class="row g-2 g-md-3">
+                                    <div class="col-12 col-md-6 mb-2 mb-md-3">
                                         <label for="ipNumber" class="form-label">
-                                            <i class="bi bi-hash me-1"></i>IP No. *
+                                            <i class="bi bi-hash text-primary"></i>IP / Inpatient No. *
                                         </label>
-                                        <input type="text" class="form-control" id="ipNumber" required placeholder="Inpatient Number">
+                                        <input type="text" class="form-control" id="ipNumber" required placeholder="e.g. 5582462" autocomplete="off">
+                                    </div>
+
+                                    <div class="col-12 col-md-6 mb-2 mb-md-3">
+                                        <label for="procedureDate" class="form-label">
+                                            <i class="bi bi-calendar-check text-primary"></i>Procedure Date *
+                                        </label>
+                                        <input type="date" class="form-control" id="procedureDate" required>
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="procedureDate" class="form-label">
-                                        <i class="bi bi-calendar-check me-1"></i>Procedure Date *
-                                    </label>
-                                    <input type="date" class="form-control" id="procedureDate" required>
-                                </div>
-
-                                <div class="mb-3">
+                                <div class="mb-2 mb-md-3">
                                     <label for="diagnosis" class="form-label">
-                                        <i class="bi bi-clipboard2-pulse me-1"></i>Diagnosis *
+                                        <i class="bi bi-clipboard2-pulse text-primary"></i>Diagnosis *
                                     </label>
-                                    <textarea class="form-control" id="diagnosis" rows="2" required></textarea>
+                                    <textarea class="form-control" id="diagnosis" rows="2" required placeholder="e.g. Right Upper Pole Calculus 1.4 cm"></textarea>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="procedureDone" class="form-label">
-                                        <i class="bi bi-activity me-1"></i>Procedure Done *
+                                        <i class="bi bi-activity text-primary"></i>Procedure Done *
                                     </label>
-                                    <input type="text" class="form-control" id="procedureDone" list="procedureList" required placeholder="Enter procedure name">
+                                    <input type="text" class="form-control" id="procedureDone" list="procedureList" required placeholder="Type or select procedure..." autocomplete="off">
                                     <datalist id="procedureList"></datalist>
                                 </div>
 
+                                <!-- Tactile Performance Status Selector -->
                                 <div class="mb-3">
                                     <label class="form-label">
-                                        <i class="bi bi-check2-square me-1"></i>Performance Status <small class="text-muted">(Select all that apply)</small>
+                                        <i class="bi bi-check2-square text-primary"></i>Performance Status <small class="text-muted">(Tap all that apply)</small>
                                     </label>
                                     <div class="row g-2">
-                                        <div class="col-md-6">
-                                            <div class="form-check border rounded p-3">
-                                                <input class="form-check-input" type="checkbox" id="observed" value="yes">
-                                                <label class="form-check-label fw-bold" for="observed">
-                                                    <i class="bi bi-eye me-1 text-info"></i>Observed
-                                                </label>
-                                            </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="status-tile" id="tileObserved" for="observed">
+                                                <input class="form-check-input" type="checkbox" id="observed" value="yes" onchange="toggleTileStyle('observed')">
+                                                <div>
+                                                    <div class="fw-bold text-info"><i class="bi bi-eye me-1"></i>Observed</div>
+                                                </div>
+                                            </label>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check border rounded p-3">
-                                                <input class="form-check-input" type="checkbox" id="assisted" value="yes">
-                                                <label class="form-check-label fw-bold" for="assisted">
-                                                    <i class="bi bi-hand-thumbs-up me-1 text-warning"></i>Assisted
-                                                </label>
-                                            </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="status-tile" id="tileAssisted" for="assisted">
+                                                <input class="form-check-input" type="checkbox" id="assisted" value="yes" onchange="toggleTileStyle('assisted')">
+                                                <div>
+                                                    <div class="fw-bold text-warning"><i class="bi bi-hand-thumbs-up me-1"></i>Assisted</div>
+                                                </div>
+                                            </label>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check border rounded p-3">
-                                                <input class="form-check-input" type="checkbox" id="performedUnderSupervision" value="yes">
-                                                <label class="form-check-label fw-bold" for="performedUnderSupervision">
-                                                    <i class="bi bi-person-check me-1 text-primary"></i>Performed Under Supervision
-                                                </label>
-                                            </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="status-tile" id="tileSupervised" for="performedUnderSupervision">
+                                                <input class="form-check-input" type="checkbox" id="performedUnderSupervision" value="yes" onchange="toggleTileStyle('performedUnderSupervision')">
+                                                <div>
+                                                    <div class="fw-bold text-primary"><i class="bi bi-person-check me-1"></i>Supervised</div>
+                                                </div>
+                                            </label>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check border rounded p-3">
-                                                <input class="form-check-input" type="checkbox" id="independentlyPerformed" value="yes">
-                                                <label class="form-check-label fw-bold" for="independentlyPerformed">
-                                                    <i class="bi bi-person-check-fill me-1 text-success"></i>Independently Performed
-                                                </label>
-                                            </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="status-tile" id="tileIndependent" for="independentlyPerformed">
+                                                <input class="form-check-input" type="checkbox" id="independentlyPerformed" value="yes" onchange="toggleTileStyle('independentlyPerformed')">
+                                                <div>
+                                                    <div class="fw-bold text-success"><i class="bi bi-person-check-fill me-1"></i>Independent</div>
+                                                </div>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="hospital" class="form-label">
-                                        <i class="bi bi-hospital me-1"></i>Hospital / Institution
-                                    </label>
-                                    <input type="text" class="form-control" id="hospital">
+                                <div class="row g-2 g-md-3">
+                                    <div class="col-12 col-md-6 mb-2 mb-md-3">
+                                        <label for="hospital" class="form-label">
+                                            <i class="bi bi-hospital text-primary"></i>Hospital / Institution
+                                        </label>
+                                        <input type="text" class="form-control" id="hospital" placeholder="e.g. YMC Mangalore / GMC Thrissur">
+                                    </div>
+
+                                    <div class="col-12 col-md-6 mb-2 mb-md-3">
+                                        <label for="remarks" class="form-label">
+                                            <i class="bi bi-chat-left-text text-primary"></i>Remarks / Notes
+                                        </label>
+                                        <input type="text" class="form-control" id="remarks" placeholder="Optional notes, size, findings">
+                                    </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="remarks" class="form-label">
-                                        <i class="bi bi-journal-text me-1"></i>Remarks / Additional Notes
-                                    </label>
-                                    <textarea class="form-control" id="remarks" rows="2"></textarea>
-                                </div>
-
-                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
                                     <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none" onclick="cancelEdit()">
                                         <i class="bi bi-x-circle me-1"></i>Cancel Edit
                                     </button>
-                                    <button type="reset" id="resetBtn" class="btn btn-secondary" onclick="cancelEdit()">
+                                    <button type="reset" id="resetBtn" class="btn btn-light border" onclick="cancelEdit()">
                                         <i class="bi bi-arrow-clockwise me-1"></i>Reset
                                     </button>
-                                    <button type="submit" id="submitBtn" class="btn btn-success">
+                                    <button type="submit" id="submitBtn" class="btn btn-success px-4 py-2">
                                         <i class="bi bi-save me-1" id="submitBtnIcon"></i><span id="submitBtnText">Save Procedure</span>
                                     </button>
                                 </div>
@@ -316,26 +399,49 @@
         <section id="procedure-records" class="mb-5">
             <div class="row">
                 <div class="col-12">
-                    <div class="card shadow patient-record">
-                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="bi bi-people-fill me-2"></i>
-                                <span class="category-label">Procedure</span> Records
-                                <span id="recordCountBadge" class="badge bg-light text-dark ms-2"></span>
-                            </h5>
-                            <div class="d-flex gap-2 flex-wrap flex-md-nowrap">
-                                <div class="search-container">
-                                    <i class="bi bi-search search-icon d-none d-md-block"></i>
-                                    <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search records..." autocomplete="off">
+                    <div class="card shadow-sm patient-record">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="mb-0 fw-bold fs-6 fs-md-5">
+                                    <i class="bi bi-journal-medical me-1"></i>
+                                    <span class="category-label">Procedure</span> Records
+                                </h5>
+                                <span id="recordCountBadge" class="badge bg-white text-info fw-bold"></span>
+                            </div>
+                            
+                            <div class="d-flex gap-2 align-items-center flex-grow-1 flex-md-grow-0 justify-content-end">
+                                <!-- Search Box -->
+                                <div class="input-group input-group-sm" style="max-width: 260px;">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                    <input type="text" class="form-control border-start-0 ps-0" id="searchInput" placeholder="Search records..." autocomplete="off">
                                 </div>
-                                <button class="btn btn-light btn-sm flex-shrink-0" onclick="loadRecords()">
+                                
+                                <!-- Refresh Button -->
+                                <button class="btn btn-light btn-sm flex-shrink-0" onclick="loadRecords()" title="Refresh database">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
+                                
+                                <!-- View Mode Toggle (Mobile / Desktop) -->
+                                <div class="btn-group btn-group-sm" id="viewModeToggle">
+                                    <button type="button" class="btn btn-light active" id="btnViewCards" onclick="switchViewMode('cards')" title="Card View">
+                                        <i class="bi bi-grid-fill"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-light" id="btnViewTable" onclick="switchViewMode('table')" title="Table View">
+                                        <i class="bi bi-table"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover" id="recordsTable">
+                        
+                        <div class="card-body p-2 p-md-3">
+                            <!-- Mobile Feed Cards Container -->
+                            <div id="mobileRecordsContainer" class="d-block">
+                                <!-- Mobile cards rendered here via JavaScript -->
+                            </div>
+
+                            <!-- Desktop Table Container -->
+                            <div class="table-responsive d-none" id="tableContainer">
+                                <table class="table table-hover align-middle" id="recordsTable">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Date</th>
@@ -345,21 +451,23 @@
                                             <th>IP No.</th>
                                             <th>Diagnosis</th>
                                             <th>Procedure Done</th>
-                                            <th>Obs</th>
-                                            <th>Asst</th>
-                                            <th>Sup</th>
-                                            <th>Ind</th>
-                                            <th>Actions</th>
+                                            <th class="text-center">Obs</th>
+                                            <th class="text-center">Asst</th>
+                                            <th class="text-center">Sup</th>
+                                            <th class="text-center">Ind</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="recordsTableBody">
-                                        <!-- Records will be loaded here -->
+                                        <!-- Table rows rendered here via JavaScript -->
                                     </tbody>
                                 </table>
                             </div>
-                            <div id="noRecords" class="text-center text-muted py-4" style="display: none;">
-                                <i class="bi bi-inbox fs-1"></i>
-                                <p class="mt-2">No procedure records found</p>
+
+                            <!-- Empty State -->
+                            <div id="noRecords" class="text-center text-muted py-5" style="display: none;">
+                                <i class="bi bi-folder-x fs-1 text-muted"></i>
+                                <p class="mt-2 fw-semibold">No procedure records found</p>
                             </div>
                         </div>
                     </div>
@@ -368,21 +476,42 @@
         </section>
     </div>
 
+    <!-- Sticky Bottom Navigation Bar for Mobile -->
+    <div class="mobile-bottom-nav d-md-none">
+        <a href="#add-procedure" class="mobile-nav-item">
+            <i class="bi bi-plus-circle-fill text-success"></i>
+            <span>Add</span>
+        </a>
+        <a href="#procedure-records" class="mobile-nav-item">
+            <i class="bi bi-journal-medical text-primary"></i>
+            <span>Records</span>
+        </a>
+        <a href="#" class="mobile-nav-item" onclick="showPrintRangeModal()">
+            <i class="bi bi-printer text-info"></i>
+            <span>Print PDF</span>
+        </a>
+        <a href="#" class="mobile-nav-item" onclick="changeCategory()">
+            <i class="bi bi-arrow-repeat text-warning"></i>
+            <span>Category</span>
+        </a>
+    </div>
+
     <!-- Success Modal -->
     <div class="modal fade" id="successModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">
-                        <i class="bi bi-check-circle me-2"></i>Success
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-check-circle-fill me-2"></i>Success
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <p id="successMessage">Procedure record saved successfully!</p>
+                <div class="modal-body py-4 text-center">
+                    <i class="bi bi-check2-circle text-success fs-1 mb-2 d-block"></i>
+                    <p id="successMessage" class="fs-6 fw-semibold mb-0">Procedure record saved successfully!</p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">OK</button>
                 </div>
             </div>
         </div>
@@ -390,18 +519,18 @@
 
     <!-- Procedure Details Modal -->
     <div class="modal fade" id="procedureModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">
-                        <i class="bi bi-person-badge me-2"></i>Procedure Details
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-person-badge-fill me-2"></i>Procedure Details
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="procedureDetails">
+                <div class="modal-body p-3 p-md-4" id="procedureDetails">
                     <!-- Procedure details will be loaded here -->
                 </div>
-                <div class="modal-footer d-flex justify-content-between flex-wrap gap-2">
+                <div class="modal-footer d-flex justify-content-between flex-wrap gap-2 bg-light">
                     <button type="button" class="btn btn-outline-danger" id="modalDeleteBtn" onclick="deleteRecordFromModal()">
                         <i class="bi bi-trash me-1"></i>Delete Record
                     </button>
@@ -421,19 +550,19 @@
 
     <!-- Print Date Range Modal -->
     <div class="modal fade" id="printRangeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title">
-                        <i class="bi bi-calendar-range me-2"></i>Select Date Range for Printing
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-printer-fill me-2"></i>Generate PDF Report
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-3 p-md-4">
                     <form id="printRangeForm">
                         <div class="mb-3">
                             <label for="printCategory" class="form-label">
-                                <i class="bi bi-tag me-1"></i>Procedure Category
+                                <i class="bi bi-tag text-primary"></i>Procedure Category
                             </label>
                             <select class="form-select" id="printCategory">
                                 <option value="Major">Major Procedures</option>
@@ -441,40 +570,42 @@
                                 <option value="All">All Procedures</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="printStartDate" class="form-label">
-                                <i class="bi bi-calendar-event me-1"></i>Start Date
-                            </label>
-                            <input type="date" class="form-control" id="printStartDate" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="printEndDate" class="form-label">
-                                <i class="bi bi-calendar-event me-1"></i>End Date
-                            </label>
-                            <input type="date" class="form-control" id="printEndDate" required>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="printStartDate" class="form-label">
+                                    <i class="bi bi-calendar-event text-primary"></i>Start Date
+                                </label>
+                                <input type="date" class="form-control" id="printStartDate" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="printEndDate" class="form-label">
+                                    <i class="bi bi-calendar-event text-primary"></i>End Date
+                                </label>
+                                <input type="date" class="form-control" id="printEndDate" required>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="printFormat" class="form-label">
-                                <i class="bi bi-file-earmark me-1"></i>Print Format
+                                <i class="bi bi-file-earmark-text text-primary"></i>Print Format
                             </label>
                             <select class="form-select" id="printFormat">
-                                <option value="detailed">Detailed Report</option>
-                                <option value="summary">Summary Report</option>
-                                <option value="compact">Compact List</option>
+                                <option value="detailed">Detailed Report (Full medical records)</option>
+                                <option value="summary">Summary Report (Patient list + summary)</option>
+                                <option value="compact">Compact Table List (Logbook sheet)</option>
                             </select>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="includeEmptyFields" checked>
-                            <label class="form-check-label" for="includeEmptyFields">
-                                Include empty fields in report
+                            <label class="form-check-label small" for="includeEmptyFields">
+                                Include remarks & empty fields in report
                             </label>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-info" onclick="printDateRange()">
-                        <i class="bi bi-printer me-1"></i>Generate PDF
+                    <button type="button" class="btn btn-info text-white" onclick="printDateRange()">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Generate PDF
                     </button>
                 </div>
             </div>
@@ -486,6 +617,32 @@
     <!-- Custom JavaScript -->
     <script src="script.js"></script>
     <script>
+        // Interactive tactile checkbox tiles helper
+        function toggleTileStyle(id) {
+            const cb = document.getElementById(id);
+            if (!cb) return;
+            const tileMap = {
+                'observed': 'tileObserved',
+                'assisted': 'tileAssisted',
+                'performedUnderSupervision': 'tileSupervised',
+                'independentlyPerformed': 'tileIndependent'
+            };
+            const classMap = {
+                'observed': 'active-observed',
+                'assisted': 'active-assisted',
+                'performedUnderSupervision': 'active-supervised',
+                'independentlyPerformed': 'active-independent'
+            };
+            const tile = document.getElementById(tileMap[id]);
+            if (tile) {
+                if (cb.checked) {
+                    tile.classList.add(classMap[id]);
+                } else {
+                    tile.classList.remove(classMap[id]);
+                }
+            }
+        }
+        
         // Initialize category on page load
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('procedureDate').valueAsDate = new Date();

@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Login - Dr. Shabeel Sulaiman's Logbook</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -13,49 +18,32 @@
     <link rel="stylesheet" href="styles.css">
     
     <style>
-        .login-container {
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .login-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,112C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
-            background-size: cover;
-            animation: wave 10s linear infinite;
-        }
-        
-        @keyframes wave {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            padding: 1.5rem 1rem;
+            margin: 0;
         }
         
         .login-card {
-            max-width: 400px;
+            max-width: 420px;
             width: 100%;
-            border: none;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
             border-radius: 20px;
             overflow: hidden;
-            animation: slideUp 0.8s ease-out;
-            position: relative;
-            z-index: 10;
+            background: #ffffff;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
         @keyframes slideUp {
             from { 
                 opacity: 0; 
-                transform: translateY(50px) scale(0.9); 
+                transform: translateY(30px) scale(0.96); 
             }
             to { 
                 opacity: 1; 
@@ -64,32 +52,15 @@
         }
         
         .login-header {
-            background: linear-gradient(45deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
             color: white;
             text-align: center;
-            padding: 2.5rem 2rem;
+            padding: 2.25rem 1.5rem 1.75rem;
             position: relative;
-            overflow: hidden;
-        }
-        
-        .login-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            animation: shimmer 3s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
         
         .login-body {
-            padding: 2.5rem 2rem;
+            padding: 2rem 1.75rem;
             background: white;
         }
         
@@ -100,162 +71,42 @@
             top: 50%;
             transform: translateY(-50%);
             z-index: 10;
-            color: #6c757d;
-            transition: color 0.3s ease;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            transition: color 0.2s ease;
         }
         
         .password-toggle:hover {
-            color: #007bff;
-        }
-        
-        .input-group {
-            position: relative;
-            margin-bottom: 1.5rem;
+            color: #2563eb;
         }
         
         .form-control {
             border-radius: 10px;
-            border: 2px solid #e9ecef;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
-            font-size: 16px;
+            border: 1.5px solid #cbd5e1;
+            padding: 12px 45px 12px 15px;
+            font-size: 16px; /* Prevents zoom on iOS */
+            transition: all 0.2s ease;
         }
         
         .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-            transform: translateY(-2px);
-        }
-        
-        .medical-icon {
-            font-size: 4rem;
-            color: #ffffff;
-            margin-bottom: 1rem;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .btn-primary {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .btn-primary:hover::before {
-            left: 100%;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 123, 255, 0.3);
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
         }
         
         .shake {
-            animation: shake 0.5s;
+            animation: shake 0.4s ease-in-out;
         }
         
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-            20%, 40%, 60%, 80% { transform: translateX(10px); }
-        }
-        
-        .alert {
-            border-radius: 10px;
-            border: none;
-            animation: slideDown 0.3s ease-out;
-        }
-        
-        @keyframes slideDown {
-            from { 
-                opacity: 0; 
-                transform: translateY(-20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
-        }
-        
-        .floating-shapes {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 1;
-        }
-        
-        .shape {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.1);
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        .shape:nth-child(1) {
-            width: 80px;
-            height: 80px;
-            left: 10%;
-            top: 20%;
-            border-radius: 50%;
-            animation-delay: 0s;
-        }
-        
-        .shape:nth-child(2) {
-            width: 60px;
-            height: 60px;
-            right: 15%;
-            top: 30%;
-            border-radius: 50%;
-            animation-delay: 2s;
-        }
-        
-        .shape:nth-child(3) {
-            width: 40px;
-            height: 40px;
-            left: 20%;
-            bottom: 20%;
-            border-radius: 50%;
-            animation-delay: 4s;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
         }
         
         .ecg-container {
-            width: 200px;
-            height: 60px;
-            margin: 0 auto 15px;
+            width: 140px;
+            height: 45px;
+            margin: 0 auto 12px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -264,77 +115,60 @@
         .ecg-line {
             width: 100%;
             height: 100%;
-            animation: ecgPulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes ecgPulse {
-            0%, 100% { 
-                opacity: 0.3;
-                transform: scale(0.95);
-            }
-            50% { 
-                opacity: 1;
-                transform: scale(1.05);
-            }
+            stroke: #93c5fd;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="floating-shapes">
-            <div class="shape"></div>
-            <div class="shape"></div>
-            <div class="shape"></div>
+    <div class="login-card">
+        <div class="login-header">
+            <div class="ecg-container">
+                <svg class="ecg-line" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0,30 L30,30 L40,30 L50,10 L60,50 L70,30 L80,30 L90,30 L100,5 L110,55 L120,30 L130,30 L140,30 L150,15 L160,45 L170,30 L200,30" 
+                          fill="none" 
+                          stroke="#93c5fd" 
+                          stroke-width="3.5" 
+                          stroke-linecap="round" 
+                          stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h4 class="fw-bold mb-1">Dr. Shabeel Sulaiman</h4>
+            <div class="text-light opacity-75 small">Surgical Procedure Logbook</div>
         </div>
-        <div class="login-card card fade-in">
-            <div class="login-header">
-                <div class="ecg-container">
-                    <svg class="ecg-line" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0,30 L30,30 L40,30 L50,10 L60,50 L70,30 L80,30 L90,30 L100,5 L110,55 L120,30 L130,30 L140,30 L150,15 L160,45 L170,30 L200,30" 
-                              fill="none" 
-                              stroke="#007bff" 
-                              stroke-width="3" 
-                              stroke-linecap="round" 
-                              stroke-linejoin="round"/>
-                    </svg>
+        
+        <div class="login-body">
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-bold text-dark mb-2">
+                        <i class="bi bi-shield-lock-fill text-primary me-1"></i>Security Password
+                    </label>
+                    <div class="position-relative">
+                        <input type="password" class="form-control" id="password" required 
+                               placeholder="Enter logbook password" autocomplete="current-password">
+                        <span class="password-toggle" onclick="togglePassword()">
+                            <i class="bi bi-eye" id="toggleIcon"></i>
+                        </span>
+                    </div>
                 </div>
-                <h3>Dr. Shabeel Sulaiman's Logbook</h3>
-                <p class="mb-0">Secure Access Required</p>
-            </div>
-            <div class="login-body">
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="password" class="form-label">
-                            <i class="bi bi-lock me-1"></i>Enter Password
-                        </label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="password" required 
-                                   placeholder="Enter your password" autocomplete="current-password">
-                            <span class="password-toggle" onclick="togglePassword()">
-                                <i class="bi bi-eye" id="toggleIcon"></i>
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div id="errorAlert" class="alert alert-danger d-none" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Incorrect password. Please try again.
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
-                        </button>
-                    </div>
-                    
-                    <div class="text-center mt-3">
-                        <small class="text-muted">
-                            <i class="bi bi-shield-check me-1"></i>
-                            Secure medical records system
-                        </small>
-                    </div>
-                </form>
-            </div>
+                
+                <div id="errorAlert" class="alert alert-danger d-none py-2 px-3 small border-0 d-flex align-items-center mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                    <div>Incorrect password. Please try again.</div>
+                </div>
+                
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold py-2 fs-6">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Access Logbook
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <small class="text-muted d-flex align-items-center justify-content-center gap-1">
+                        <i class="bi bi-hospital text-primary"></i>
+                        <span>Govt Medical College Thrissur</span>
+                    </small>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -342,7 +176,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Default password - change this to your preferred password
         const CORRECT_PASSWORD = 'medical123';
         
         // Check if already authenticated
@@ -356,10 +189,10 @@
             
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
-                toggleIcon.className = 'bi bi-eye-slash';
+                toggleIcon.className = 'bi bi-eye-slash text-primary';
             } else {
                 passwordInput.type = 'password';
-                toggleIcon.className = 'bi bi-eye';
+                toggleIcon.className = 'bi bi-eye text-muted';
             }
         }
         
@@ -371,40 +204,27 @@
             const loginCard = document.querySelector('.login-card');
             
             if (password === CORRECT_PASSWORD) {
-                // Set authentication flag
                 sessionStorage.setItem('authenticated', 'true');
-                
-                // Success animation
-                loginCard.classList.add('fade-in');
-                loginCard.style.borderColor = '#28a745';
-                
-                // Redirect to main page
+                loginCard.style.transform = 'scale(0.98)';
+                loginCard.style.opacity = '0.7';
                 setTimeout(() => {
                     window.location.href = 'index.html';
-                }, 500);
-                
+                }, 300);
             } else {
-                // Show error
                 errorAlert.classList.remove('d-none');
                 loginCard.classList.add('shake');
-                
-                // Remove shake animation
                 setTimeout(() => {
                     loginCard.classList.remove('shake');
-                }, 500);
-                
-                // Clear password field
+                }, 400);
                 document.getElementById('password').value = '';
                 document.getElementById('password').focus();
             }
         });
         
-        // Clear error when user starts typing
         document.getElementById('password').addEventListener('input', function() {
             document.getElementById('errorAlert').classList.add('d-none');
         });
         
-        // Prevent back button after logout
         window.addEventListener('pageshow', function(event) {
             if (event.persisted) {
                 sessionStorage.removeItem('authenticated');

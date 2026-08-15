@@ -382,11 +382,62 @@ async function loadRecords(silent = false) {
     }
 }
 
+let currentRoleFilter = 'all';
+let currentViewMode = window.innerWidth < 768 ? 'cards' : 'cards';
+
+function switchViewMode(mode) {
+    currentViewMode = mode;
+    const cardsCont = document.getElementById('mobileRecordsContainer');
+    const tableCont = document.getElementById('tableContainer');
+    const btnCards = document.getElementById('btnViewCards');
+    const btnTable = document.getElementById('btnViewTable');
+    
+    if (mode === 'table') {
+        if (cardsCont) cardsCont.classList.add('d-none');
+        if (cardsCont) cardsCont.classList.remove('d-block');
+        if (tableCont) tableCont.classList.remove('d-none');
+        if (btnTable) btnTable.classList.add('active', 'btn-primary');
+        if (btnTable) btnTable.classList.remove('btn-light');
+        if (btnCards) btnCards.classList.remove('active', 'btn-primary');
+        if (btnCards) btnCards.classList.add('btn-light');
+    } else {
+        if (cardsCont) cardsCont.classList.remove('d-none');
+        if (cardsCont) cardsCont.classList.add('d-block');
+        if (tableCont) tableCont.classList.add('d-none');
+        if (btnCards) btnCards.classList.add('active', 'btn-primary');
+        if (btnCards) btnCards.classList.remove('btn-light');
+        if (btnTable) btnTable.classList.remove('active', 'btn-primary');
+        if (btnTable) btnTable.classList.add('btn-light');
+    }
+}
+
+function filterByRole(role) {
+    currentRoleFilter = role;
+    
+    // Highlight active stat card
+    const cards = ['statCardAll', 'statCardInd', 'statCardSup', 'statCardAsst'];
+    cards.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('border-primary', 'shadow-md');
+    });
+    
+    const activeMap = {
+        'all': 'statCardAll',
+        'independent': 'statCardInd',
+        'supervised': 'statCardSup',
+        'assisted': 'statCardAsst'
+    };
+    const activeCard = document.getElementById(activeMap[role]);
+    if (activeCard) activeCard.classList.add('border-primary', 'shadow-md');
+    
+    const searchVal = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').trim().toLowerCase();
+    filterRecords(searchVal);
+}
+
 function displayRecords(recordsToDisplay) {
     const tableBody = document.getElementById('recordsTableBody');
+    const mobileContainer = document.getElementById('mobileRecordsContainer');
     const noRecords = document.getElementById('noRecords');
-    
-    if (!tableBody) return;
     
     let list = Array.isArray(recordsToDisplay) ? [...recordsToDisplay] : [...records];
     
@@ -399,14 +450,40 @@ function displayRecords(recordsToDisplay) {
         });
     }
     
-    // Update badge counter in table header
+    // Calculate category stats
+    const totalCount = list.length;
+    const indCount = list.filter(r => (r.independentlyPerformed || '').toString().toLowerCase() === 'yes').length;
+    const supCount = list.filter(r => (r.performedUnderSupervision || '').toString().toLowerCase() === 'yes').length;
+    const asstCount = list.filter(r => (r.assisted || '').toString().toLowerCase() === 'yes').length;
+    
+    const statTotalEl = document.getElementById('statTotalCount');
+    const statIndEl = document.getElementById('statIndCount');
+    const statSupEl = document.getElementById('statSupCount');
+    const statAsstEl = document.getElementById('statAsstCount');
+    
+    if (statTotalEl) statTotalEl.textContent = totalCount;
+    if (statIndEl) statIndEl.textContent = indCount;
+    if (statSupEl) statSupEl.textContent = supCount;
+    if (statAsstEl) statAsstEl.textContent = asstCount;
+    
+    // Apply role filter if active
+    if (currentRoleFilter === 'independent') {
+        list = list.filter(r => (r.independentlyPerformed || '').toString().toLowerCase() === 'yes');
+    } else if (currentRoleFilter === 'supervised') {
+        list = list.filter(r => (r.performedUnderSupervision || '').toString().toLowerCase() === 'yes');
+    } else if (currentRoleFilter === 'assisted') {
+        list = list.filter(r => (r.assisted || '').toString().toLowerCase() === 'yes');
+    }
+    
+    // Update badge counter in records header
     const countBadge = document.getElementById('recordCountBadge');
     if (countBadge) {
         countBadge.textContent = `${list.length} record${list.length === 1 ? '' : 's'}`;
     }
     
     if (list.length === 0) {
-        tableBody.innerHTML = '';
+        if (tableBody) tableBody.innerHTML = '';
+        if (mobileContainer) mobileContainer.innerHTML = '';
         if (noRecords) {
             noRecords.style.display = 'block';
             const msg = noRecords.querySelector('p');
@@ -427,41 +504,120 @@ function displayRecords(recordsToDisplay) {
         return dateB - dateA;
     });
     
-    tableBody.innerHTML = list.map(record => {
-        const obs = (record.observed || '').toString().toLowerCase() === 'yes';
-        const asst = (record.assisted || '').toString().toLowerCase() === 'yes';
-        const sup = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
-        const ind = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
-        
-        return `
-            <tr>
-                <td>${formatDate(record.procedureDate || record.visitDate)}</td>
-                <td>
-                    <strong>${escapeHtml(record.name || 'Unnamed')}</strong>
-                    ${isNewRecord(record.procedureDate || record.visitDate) ? '<span class="badge bg-success ms-1">New</span>' : ''}
-                </td>
-                <td>${record.age !== undefined && record.age !== null ? record.age : '-'}</td>
-                <td>${record.sex || record.gender || '-'}</td>
-                <td>${record.ipNumber || '-'}</td>
-                <td>${truncateText(escapeHtml(record.diagnosis || '-'), 35)}</td>
-                <td>${truncateText(escapeHtml(record.procedureDone || record.chiefComplaint || '-'), 35)}</td>
-                <td class="text-center">${obs ? '<i class="bi bi-check-circle-fill text-info" title="Observed"></i>' : '-'}</td>
-                <td class="text-center">${asst ? '<i class="bi bi-check-circle-fill text-warning" title="Assisted"></i>' : '-'}</td>
-                <td class="text-center">${sup ? '<i class="bi bi-check-circle-fill text-primary" title="Under Supervision"></i>' : '-'}</td>
-                <td class="text-center">${ind ? '<i class="bi bi-check-circle-fill text-success" title="Independently Performed"></i>' : '-'}</td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" title="View Details" onclick="viewRecord('${escapeHtml(record.id || record.timestamp || '')}')">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-success" title="Print Record" onclick="printRecord('${escapeHtml(record.id || record.timestamp || '')}')">
-                            <i class="bi bi-printer"></i>
-                        </button>
+    // 1. Render Desktop Table Rows
+    if (tableBody) {
+        tableBody.innerHTML = list.map(record => {
+            const obs = (record.observed || '').toString().toLowerCase() === 'yes';
+            const asst = (record.assisted || '').toString().toLowerCase() === 'yes';
+            const sup = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
+            const ind = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
+            const recId = escapeHtml(record.id || record.timestamp || '');
+            
+            return `
+                <tr>
+                    <td class="text-nowrap">${formatDate(record.procedureDate || record.visitDate)}</td>
+                    <td>
+                        <strong class="text-dark">${escapeHtml(record.name || 'Unnamed')}</strong>
+                        ${isNewRecord(record.procedureDate || record.visitDate) ? '<span class="badge bg-success ms-1" style="font-size: 0.65rem;">New</span>' : ''}
+                    </td>
+                    <td>${record.age !== undefined && record.age !== null ? record.age : '-'}</td>
+                    <td>${record.sex || record.gender || '-'}</td>
+                    <td><span class="badge bg-light text-dark border">${escapeHtml(record.ipNumber || '-')}</span></td>
+                    <td>${truncateText(escapeHtml(record.diagnosis || '-'), 35)}</td>
+                    <td><span class="fw-semibold text-primary">${truncateText(escapeHtml(record.procedureDone || record.chiefComplaint || '-'), 35)}</span></td>
+                    <td class="text-center">${obs ? '<i class="bi bi-check-circle-fill text-info" title="Observed"></i>' : '-'}</td>
+                    <td class="text-center">${asst ? '<i class="bi bi-check-circle-fill text-warning" title="Assisted"></i>' : '-'}</td>
+                    <td class="text-center">${sup ? '<i class="bi bi-check-circle-fill text-primary" title="Under Supervision"></i>' : '-'}</td>
+                    <td class="text-center">${ind ? '<i class="bi bi-check-circle-fill text-success" title="Independently Performed"></i>' : '-'}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" title="View Details" onclick="viewRecord('${recId}')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-warning" title="Edit Record" onclick="editRecord('${recId}')">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" title="Print" onclick="printRecord('${recId}')">
+                                <i class="bi bi-printer"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // 2. Render Mobile Cards Feed
+    if (mobileContainer) {
+        mobileContainer.innerHTML = list.map(record => {
+            const obs = (record.observed || '').toString().toLowerCase() === 'yes';
+            const asst = (record.assisted || '').toString().toLowerCase() === 'yes';
+            const sup = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
+            const ind = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
+            const recId = escapeHtml(record.id || record.timestamp || '');
+            
+            const ageSex = [
+                record.age ? `${record.age} yrs` : '',
+                record.sex || record.gender || ''
+            ].filter(Boolean).join(' • ');
+
+            return `
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <div>
+                            <div class="mobile-patient-name">
+                                ${escapeHtml(record.name || 'Unnamed')}
+                                ${isNewRecord(record.procedureDate || record.visitDate) ? '<span class="badge bg-success ms-1" style="font-size: 0.65rem;">New</span>' : ''}
+                            </div>
+                            <div class="text-muted small">${ageSex || 'Patient'}</div>
+                        </div>
+                        <div class="mobile-date-badge">
+                            <i class="bi bi-calendar3 me-1"></i>${formatDate(record.procedureDate || record.visitDate)}
+                        </div>
                     </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
+                    
+                    <div class="mobile-procedure-title">
+                        <i class="bi bi-activity text-primary"></i>
+                        <span>${escapeHtml(record.procedureDone || record.chiefComplaint || '-')}</span>
+                    </div>
+                    
+                    <div class="mobile-diagnosis">
+                        <strong class="d-block text-secondary" style="font-size: 0.75rem;">DIAGNOSIS:</strong>
+                        ${escapeHtml(record.diagnosis || 'Not recorded')}
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        ${ind ? '<span class="role-chip role-chip-ind"><i class="bi bi-person-check-fill"></i> Independent</span>' : ''}
+                        ${sup ? '<span class="role-chip role-chip-sup"><i class="bi bi-person-badge-fill"></i> Supervised</span>' : ''}
+                        ${asst ? '<span class="role-chip role-chip-asst"><i class="bi bi-hand-thumbs-up-fill"></i> Assisted</span>' : ''}
+                        ${obs ? '<span class="role-chip role-chip-obs"><i class="bi bi-eye-fill"></i> Observed</span>' : ''}
+                    </div>
+                    
+                    <div class="mobile-card-footer">
+                        <div class="mobile-meta-info">
+                            <span class="badge bg-light text-dark border me-1">IP: ${escapeHtml(record.ipNumber || 'N/A')}</span>
+                            <span>${escapeHtml(record.hospital || '')}</span>
+                        </div>
+                        
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary px-2 py-1" onclick="viewRecord('${recId}')" title="View Details">
+                                <i class="bi bi-eye me-1"></i>View
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning px-2 py-1" onclick="editRecord('${recId}')" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="printRecord('${recId}')" title="Print">
+                                <i class="bi bi-printer"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Ensure correct view mode is visible
+    switchViewMode(currentViewMode);
 }
 
 function filterRecords(searchTerm) {
@@ -503,55 +659,71 @@ function viewRecord(recordId) {
     const cat = record.category || sessionStorage.getItem('logbookCategory') || 'Procedure';
     
     modalBody.innerHTML = `
-        <div class="row">
+        <div class="row g-3">
             <div class="col-md-6">
-                <h6 class="text-primary">Patient Information</h6>
-                <p><strong>Name:</strong> ${escapeHtml(record.name)}</p>
-                <p><strong>Age:</strong> ${record.age}</p>
-                <p><strong>Sex:</strong> ${record.sex || record.gender || '-'}</p>
-                <p><strong>IP No.:</strong> ${record.ipNumber || 'Not provided'}</p>
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="text-primary fw-bold mb-3"><i class="bi bi-person-fill me-2"></i>Patient Information</h6>
+                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                        <span class="text-muted">Name:</span>
+                        <strong class="text-dark">${escapeHtml(record.name || '-')}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                        <span class="text-muted">Age / Sex:</span>
+                        <span>${record.age ? record.age + ' yrs' : '-'} / ${record.sex || record.gender || '-'}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">IP Number:</span>
+                        <span class="badge bg-primary">${escapeHtml(record.ipNumber || 'Not provided')}</span>
+                    </div>
+                </div>
             </div>
             <div class="col-md-6">
-                <h6 class="text-primary">Procedure Information</h6>
-                <p><strong>Category:</strong> <span class="badge bg-info">${cat}</span></p>
-                <p><strong>Procedure Date:</strong> ${formatDate(record.procedureDate || record.visitDate)}</p>
-                <p><strong>Procedure Done:</strong> ${escapeHtml(record.procedureDone || record.chiefComplaint || '-')}</p>
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="text-primary fw-bold mb-3"><i class="bi bi-activity me-2"></i>Procedure Information</h6>
+                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                        <span class="text-muted">Category:</span>
+                        <span class="badge bg-info">${cat}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                        <span class="text-muted">Procedure Date:</span>
+                        <strong>${formatDate(record.procedureDate || record.visitDate)}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Procedure:</span>
+                        <strong class="text-primary">${escapeHtml(record.procedureDone || record.chiefComplaint || '-')}</strong>
+                    </div>
+                </div>
             </div>
         </div>
-        <hr>
+        <hr class="my-3">
         <div class="row">
             <div class="col-12">
-                <h6 class="text-primary">Medical Details</h6>
-                <p><strong>Diagnosis:</strong></p>
-                <p>${escapeHtml(record.diagnosis || 'Not recorded')}</p>
+                <h6 class="text-primary fw-bold mb-2"><i class="bi bi-clipboard2-pulse me-2"></i>Diagnosis</h6>
+                <div class="p-2 px-3 bg-light border-start border-primary border-3 rounded mb-3">
+                    ${escapeHtml(record.diagnosis || 'Not recorded')}
+                </div>
                 
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <p><strong>Observed:</strong> 
-                            ${record.observed === 'Yes' ? '<span class="badge bg-info">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
-                        </p>
+                <h6 class="text-primary fw-bold mb-2"><i class="bi bi-award me-2"></i>Performance Status</h6>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    ${record.independentlyPerformed === 'Yes' ? '<span class="role-chip role-chip-ind fs-6 px-3 py-2"><i class="bi bi-check-circle-fill"></i> Independently Performed</span>' : ''}
+                    ${record.performedUnderSupervision === 'Yes' ? '<span class="role-chip role-chip-sup fs-6 px-3 py-2"><i class="bi bi-person-check-fill"></i> Under Supervision</span>' : ''}
+                    ${record.assisted === 'Yes' ? '<span class="role-chip role-chip-asst fs-6 px-3 py-2"><i class="bi bi-hand-thumbs-up-fill"></i> Assisted</span>' : ''}
+                    ${record.observed === 'Yes' ? '<span class="role-chip role-chip-obs fs-6 px-3 py-2"><i class="bi bi-eye-fill"></i> Observed</span>' : ''}
+                </div>
+                
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <p class="mb-1 text-muted small">Hospital / Institution:</p>
+                        <p class="fw-semibold">${escapeHtml(record.hospital || 'Not recorded')}</p>
                     </div>
-                    <div class="col-md-3">
-                        <p><strong>Assisted:</strong> 
-                            ${record.assisted === 'Yes' ? '<span class="badge bg-warning">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
-                        </p>
-                    </div>
-                    <div class="col-md-3">
-                        <p><strong>Under Supervision:</strong> 
-                            ${record.performedUnderSupervision === 'Yes' ? '<span class="badge bg-primary">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
-                        </p>
-                    </div>
-                    <div class="col-md-3">
-                        <p><strong>Independently:</strong> 
-                            ${record.independentlyPerformed === 'Yes' ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
-                        </p>
+                    <div class="col-md-6">
+                        <p class="mb-1 text-muted small">Supervising Consultant:</p>
+                        <p class="fw-semibold">${escapeHtml(record.supervisor || 'Not recorded')}</p>
                     </div>
                 </div>
                 
-                <p><strong>Hospital / Institution:</strong> ${escapeHtml(record.hospital || 'Not recorded')}</p>
-                <p><strong>Supervising Consultant:</strong> ${escapeHtml(record.supervisor || 'Not recorded')}</p>
-                <p><strong>Remarks:</strong></p>
-                <p>${escapeHtml(record.remarks || 'No additional remarks')}</p>
+                <p class="mb-1 text-muted small">Remarks / Notes:</p>
+                <p class="p-2 bg-light rounded">${escapeHtml(record.remarks || 'No additional remarks')}</p>
             </div>
         </div>
     `;
@@ -598,7 +770,7 @@ function editRecord(recordId) {
     const resetBtn = document.getElementById('resetBtn');
     
     if (submitBtn) {
-        submitBtn.className = 'btn btn-warning';
+        submitBtn.className = 'btn btn-warning px-4 py-2';
     }
     if (submitBtnText) submitBtnText.textContent = 'Update Procedure';
     if (submitBtnIcon) submitBtnIcon.className = 'bi bi-check2-circle me-1';
@@ -644,6 +816,14 @@ function editRecord(recordId) {
     document.getElementById('performedUnderSupervision').checked = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
     document.getElementById('independentlyPerformed').checked = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
     
+    // Sync tile styles
+    if (typeof toggleTileStyle === 'function') {
+        toggleTileStyle('observed');
+        toggleTileStyle('assisted');
+        toggleTileStyle('performedUnderSupervision');
+        toggleTileStyle('independentlyPerformed');
+    }
+    
     document.getElementById('hospital').value = record.hospital || '';
     document.getElementById('remarks').value = record.remarks || '';
     
@@ -668,7 +848,7 @@ function cancelEdit() {
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const resetBtn = document.getElementById('resetBtn');
     
-    if (submitBtn) submitBtn.className = 'btn btn-success';
+    if (submitBtn) submitBtn.className = 'btn btn-success px-4 py-2';
     if (submitBtnText) submitBtnText.textContent = 'Save Procedure';
     if (submitBtnIcon) submitBtnIcon.className = 'bi bi-save me-1';
     if (cancelEditBtn) cancelEditBtn.classList.add('d-none');
@@ -680,6 +860,14 @@ function cancelEdit() {
     if (dateEl) dateEl.valueAsDate = new Date();
     const cat = sessionStorage.getItem('logbookCategory');
     if (cat) document.getElementById('category').value = cat;
+    
+    // Reset tile styles
+    if (typeof toggleTileStyle === 'function') {
+        toggleTileStyle('observed');
+        toggleTileStyle('assisted');
+        toggleTileStyle('performedUnderSupervision');
+        toggleTileStyle('independentlyPerformed');
+    }
 }
 
 function deleteRecordFromModal() {
@@ -1697,7 +1885,15 @@ function createDownloadableReport(patientsToPrint, startDate, endDate, format, i
 
 // Export functions for global access
 window.viewRecord = viewRecord;
+window.editRecord = editRecord;
+window.editRecordFromModal = editRecordFromModal;
+window.cancelEdit = cancelEdit;
+window.deleteRecord = deleteRecord;
+window.deleteRecordFromModal = deleteRecordFromModal;
+window.switchViewMode = switchViewMode;
+window.filterByRole = filterByRole;
 window.printRecord = printRecord;
 window.loadRecords = loadRecords;
 window.showPrintRangeModal = showPrintRangeModal;
 window.printDateRange = printDateRange;
+

@@ -1,337 +1,469 @@
-/* Custom CSS for Doctor's Logbook */
+/* Modern Healthcare Design System for Dr. Shabeel Sulaiman's Logbook */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* Global Styles */
 :root {
-    --primary-color: #0d6efd;
-    --success-color: #198754;
-    --info-color: #0dcaf0;
-    --light-gray: #f8f9fa;
-    --border-radius: 0.5rem;
-    --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    --transition: all 0.3s ease;
+    --primary: #1e40af;
+    --primary-light: #3b82f6;
+    --primary-dark: #1e3a8a;
+    --primary-bg: #eff6ff;
+    
+    --success: #059669;
+    --success-bg: #ecfdf5;
+    --success-border: #a7f3d0;
+    
+    --warning: #d97706;
+    --warning-bg: #fffbeb;
+    --warning-border: #fde68a;
+    
+    --info: #0284c7;
+    --info-bg: #f0f9ff;
+    --info-border: #bae6fd;
+    
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    
+    --bg-body: #f8fafc;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
     min-height: 100vh;
-    padding-bottom: 2rem;
+    padding-bottom: 5rem;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
 }
 
-/* Navigation */
+/* Header & Navbar */
 .navbar {
-    backdrop-filter: blur(10px);
-    background-color: rgba(13, 110, 253, 0.95) !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+    padding: 0.75rem 1rem;
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    backdrop-filter: blur(8px);
 }
 
 .navbar-brand {
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+}
+
+.nav-link {
     font-weight: 600;
-    font-size: 1.25rem;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.85rem !important;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
 }
 
-.navbar-nav .nav-link {
-    font-weight: 500;
-    transition: var(--transition);
-    border-radius: 0.375rem;
-    margin: 0 0.25rem;
-}
-
-.navbar-nav .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
     transform: translateY(-1px);
 }
 
-/* Cards */
-.card {
-    border: none;
-    border-radius: var(--border-radius);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: var(--transition);
-    backdrop-filter: blur(10px);
-    background-color: rgba(255, 255, 255, 0.95);
+/* Category Badge */
+.category-pill {
+    background: #fef08a;
+    color: #854d0e;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    box-shadow: var(--shadow-sm);
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+/* Cards & Containers */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s ease;
+    overflow: hidden;
 }
 
 .card-header {
-    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
-    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+    font-weight: 700;
 }
 
-/* Forms */
+.card-header.bg-primary {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
+}
+
+.card-header.bg-success {
+    background: linear-gradient(135deg, #065f46 0%, #059669 100%) !important;
+}
+
+.card-header.bg-info {
+    background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%) !important;
+}
+
+/* Stat Cards / Metric Strip */
+.stat-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    user-select: none;
+}
+
+.stat-card:hover, .stat-card.active {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.stat-number {
+    font-size: 1.4rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+}
+
+/* Form Controls & Inputs */
+.form-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #334155;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 .form-control, .form-select {
-    border-radius: 0.375rem;
-    border: 1px solid #dee2e6;
-    transition: var(--transition);
+    border-radius: var(--radius-sm);
+    border: 1px solid #cbd5e1;
+    padding: 0.65rem 0.85rem;
     font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background-color: #ffffff;
 }
 
 .form-control:focus, .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    transform: translateY(-1px);
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    outline: none;
 }
 
-.form-label {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
+/* Touch-friendly Status Selection Checkbox Tiles */
+.status-tile {
+    position: relative;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.85rem 1rem;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    user-select: none;
+    min-height: 52px;
+}
+
+.status-tile:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.status-tile .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0;
+    cursor: pointer;
+}
+
+.status-tile.active-observed {
+    background: #ecfeff;
+    border-color: #06b6d4;
+    color: #0e7490;
+}
+
+.status-tile.active-assisted {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    color: #b45309;
+}
+
+.status-tile.active-supervised {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+}
+
+.status-tile.active-independent {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #047857;
 }
 
 /* Buttons */
 .btn {
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: var(--transition);
-    border: none;
-    padding: 0.5rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
 }
 
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.btn-success {
-    background: linear-gradient(45deg, #28a745, #20c997);
+.btn:active {
+    transform: scale(0.97);
 }
 
 .btn-primary {
-    background: linear-gradient(45deg, #007bff, #6610f2);
+    background-color: var(--primary);
+    border-color: var(--primary);
 }
 
-.btn-secondary {
-    background: linear-gradient(45deg, #6c757d, #495057);
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
 }
 
-/* Tables */
+/* Mobile Procedure Cards Feed */
+.mobile-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.mobile-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: var(--shadow-md);
+}
+
+.mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.mobile-patient-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.mobile-date-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+}
+
+.mobile-procedure-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1e40af;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.mobile-diagnosis {
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 0.6rem;
+    background: #f8fafc;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid #3b82f6;
+}
+
+.role-chip {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.role-chip-ind {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.role-chip-sup {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.role-chip-asst {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.role-chip-obs {
+    background: #cffafe;
+    color: #155e75;
+}
+
+.mobile-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 0.65rem;
+    margin-top: 0.65rem;
+}
+
+.mobile-meta-info {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Desktop Table Enhancements */
 .table {
-    border-radius: var(--border-radius);
-    overflow: hidden;
+    margin-bottom: 0;
+    font-size: 0.9rem;
 }
 
 .table thead th {
-    border-bottom: 2px solid #dee2e6;
-    font-weight: 600;
+    background-color: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    background-color: var(--light-gray);
+    letter-spacing: 0.04em;
+    padding: 0.85rem 0.75rem;
+    border-bottom: 2px solid #cbd5e1;
+    white-space: nowrap;
 }
 
-.table tbody tr {
-    transition: var(--transition);
+.table tbody td {
+    padding: 0.85rem 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
 }
 
 .table tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.05);
-    transform: scale(1.01);
+    background-color: #f8fafc;
 }
 
-/* Search Input */
-#searchInput {
-    min-width: 250px;
-    border-radius: 2rem;
-    padding-left: 1rem;
+/* Sticky Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem 0.25rem;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.06);
+    z-index: 1030;
 }
 
-/* Modals */
-.modal-content {
-    border: none;
-    border-radius: var(--border-radius);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    flex: 1;
+    text-align: center;
 }
 
-.modal-header {
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
+.mobile-nav-item i {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
 }
 
-/* Print Styles */
+.mobile-nav-item.active, .mobile-nav-item:active {
+    color: var(--primary);
+}
+
+/* Print Optimization */
 @media print {
     body {
         background: white !important;
-        font-size: 12pt;
+        padding-bottom: 0 !important;
     }
-    
-    .navbar,
-    .btn,
-    .modal-footer,
-    #add-procedure {
+    .navbar, .mobile-bottom-nav, .btn, #add-procedure, .modal-footer, #viewModeToggle {
         display: none !important;
     }
-    
     .card {
         box-shadow: none !important;
-        border: 1px solid #dee2e6 !important;
-        page-break-inside: avoid;
+        border: none !important;
     }
-    
-    .table {
-        font-size: 10pt;
-    }
-    
-    .no-print {
-        display: none !important;
-    }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 0 1rem;
-    }
-    
-    .card {
-        margin-bottom: 1rem;
-    }
-    
-    .table-responsive {
-        font-size: 0.875rem;
-    }
-    
-    .btn {
-        padding: 0.375rem 1rem;
-        font-size: 0.875rem;
-    }
-    
-    #searchInput {
-        min-width: 100%;
-        margin-bottom: 0.5rem;
-    }
-    
-    .card-header .d-flex {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .d-md-flex {
-        flex-direction: column !important;
-    }
-    
-    .table thead th {
-        font-size: 0.75rem;
-        padding: 0.5rem 0.25rem;
-    }
-    
-    .table tbody td {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.8rem;
-    }
-}
-
-/* iPhone Specific Optimizations */
-@media (max-width: 414px) {
-    .navbar-brand {
-        font-size: 1.1rem;
-    }
-    
-    .card-body {
-        padding: 1rem 0.75rem;
-    }
-    
-    .form-control, .form-select {
-        font-size: 16px; /* Prevents zoom on iOS */
-    }
-    
-    .btn {
-        font-size: 0.875rem;
-        padding: 0.5rem 0.75rem;
-    }
-    
-    .table-responsive {
-        font-size: 0.75rem;
-    }
-    
-    .modal-dialog {
-        margin: 0.5rem;
-    }
-}
-
-/* Loading Spinner */
-.spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-}
-
-/* Success Animation */
-@keyframes slideInDown {
-    from {
-        transform: translateY(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.success-animation {
-    animation: slideInDown 0.5s ease-out;
-}
-
-/* Patient Record Card */
-.patient-record-card {
-    border-left: 4px solid var(--primary-color);
-    margin-bottom: 1rem;
-    transition: var(--transition);
-}
-
-.patient-record-card:hover {
-    border-left-width: 6px;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* Status Indicators */
-.status-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 0.5rem;
-}
-
-.status-new {
-    background-color: #28a745;
-}
-
-.status-followup {
-    background-color: #ffc107;
-}
-
-.status-closed {
-    background-color: #6c757d;
-}
-
-/* Accessibility */
-.visually-hidden-focusable:focus {
-    position: static !important;
-    width: auto !important;
-    height: auto !important;
-}
-
-/* Smooth Scrolling */
-html {
-    scroll-behavior: smooth;
-}
-
-/* Custom Scrollbar for WebKit browsers (Safari on Mac) */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #555;
 }
