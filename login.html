@@ -8,47 +8,64 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- AOS Animation CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     
     <style>
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
+            background: linear-gradient(135deg, #091e42 0%, #1e3a8a 50%, #1d4ed8 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 1.5rem 1rem;
             margin: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+            bottom: -80px;
+            left: -80px;
+            border-radius: 50%;
+            pointer-events: none;
         }
         
         .login-card {
-            max-width: 420px;
+            max-width: 430px;
             width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
-            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+            border-radius: 24px;
             overflow: hidden;
-            background: #ffffff;
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        
-        @keyframes slideUp {
-            from { 
-                opacity: 0; 
-                transform: translateY(30px) scale(0.96); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0) scale(1); 
-            }
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            position: relative;
+            z-index: 10;
         }
         
         .login-header {
@@ -60,7 +77,7 @@
         }
         
         .login-body {
-            padding: 2rem 1.75rem;
+            padding: 2.25rem 1.75rem;
             background: white;
         }
         
@@ -72,7 +89,7 @@
             transform: translateY(-50%);
             z-index: 10;
             color: #94a3b8;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             transition: color 0.2s ease;
         }
         
@@ -81,16 +98,35 @@
         }
         
         .form-control {
-            border-radius: 10px;
+            border-radius: 12px;
             border: 1.5px solid #cbd5e1;
-            padding: 12px 45px 12px 15px;
+            padding: 13px 45px 13px 16px;
             font-size: 16px; /* Prevents zoom on iOS */
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
         
         .form-control:focus {
             border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 700;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+            transition: all 0.25s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.45);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
         }
         
         .shake {
@@ -106,7 +142,7 @@
         .ecg-container {
             width: 140px;
             height: 45px;
-            margin: 0 auto 12px;
+            margin: 0 auto 10px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -116,11 +152,12 @@
             width: 100%;
             height: 100%;
             stroke: #93c5fd;
+            filter: drop-shadow(0 0 6px rgba(147, 197, 253, 0.6));
         }
     </style>
 </head>
 <body>
-    <div class="login-card">
+    <div class="login-card" data-aos="zoom-in" data-aos-duration="600">
         <div class="login-header">
             <div class="ecg-container">
                 <svg class="ecg-line" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
@@ -132,8 +169,8 @@
                           stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h4 class="fw-bold mb-1">Dr. Shabeel Sulaiman</h4>
-            <div class="text-light opacity-75 small">Surgical Procedure Logbook</div>
+            <h4 class="fw-bold mb-1 fs-4">Dr. Shabeel Sulaiman</h4>
+            <div class="text-white-50 small fw-semibold">Surgical Procedure Logbook</div>
         </div>
         
         <div class="login-body">
@@ -151,7 +188,7 @@
                     </div>
                 </div>
                 
-                <div id="errorAlert" class="alert alert-danger d-none py-2 px-3 small border-0 d-flex align-items-center mb-3" role="alert">
+                <div id="errorAlert" class="alert alert-danger d-none py-2 px-3 small border-0 d-flex align-items-center mb-3" role="alert" style="border-radius: 10px;">
                     <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                     <div>Incorrect password. Please try again.</div>
                 </div>
@@ -165,7 +202,7 @@
                 <div class="text-center">
                     <small class="text-muted d-flex align-items-center justify-content-center gap-1">
                         <i class="bi bi-hospital text-primary"></i>
-                        <span>Govt Medical College Thrissur</span>
+                        <span>Department of Urology • Logbook System</span>
                     </small>
                 </div>
             </form>
@@ -174,9 +211,15 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     
     <script>
         const CORRECT_PASSWORD = 'medical123';
+        
+        if (typeof AOS !== 'undefined') {
+            AOS.init({ duration: 550, easing: 'ease-out-cubic', once: true });
+        }
         
         // Check if already authenticated
         if (sessionStorage.getItem('authenticated') === 'true') {
@@ -205,8 +248,9 @@
             
             if (password === CORRECT_PASSWORD) {
                 sessionStorage.setItem('authenticated', 'true');
-                loginCard.style.transform = 'scale(0.98)';
+                loginCard.style.transform = 'scale(0.97)';
                 loginCard.style.opacity = '0.7';
+                loginCard.style.transition = 'all 0.3s ease';
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 300);
