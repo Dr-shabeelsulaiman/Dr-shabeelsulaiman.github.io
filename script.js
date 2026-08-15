@@ -1314,15 +1314,15 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
     // Fallback for period if not provided
     const periodDisplay = dateRangeText || 'Full Duration';
     
-    // Logo markup for Yenepoya institutions
-    const logoImg = `<img src="logo.jpg" alt="Yenepoya University Logo" style="height: 75px; max-width: 80px; object-fit: contain;" onerror="this.style.display='none'">`;
+    // Logo markup for Yenepoya institutions (Official SVG Vector Logo with fallback)
+    const logoImg = `<img src="yenepoya-medical-college-mangalore-logonew2.svg" alt="Yenepoya Medical College Logo" style="height: 60px; width: auto; max-width: 140px; object-fit: contain;" onerror="this.onerror=null; this.src='logo.jpg'">`;
     
     if (isYMC) {
         return `
             <div class="report-header" style="border-bottom: 2.5px solid #1e40af; padding-bottom: 12px; margin-bottom: 18px;">
                 <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
                     <tr>
-                        <td style="width: 85px; vertical-align: middle; text-align: left; border: none; padding: 0;">
+                        <td style="width: 140px; vertical-align: middle; text-align: left; border: none; padding: 0;">
                             ${logoImg}
                         </td>
                         <td style="vertical-align: middle; text-align: center; border: none; padding: 0 10px;">
@@ -1331,7 +1331,7 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
                             <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">YENEPOYA MEDICAL COLLEGE</h2>
                             <h3 style="margin: 2px 0 0 0; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">MANGALURU, INDIA</h3>
                         </td>
-                        <td style="width: 85px; border: none; padding: 0;"></td>
+                        <td style="width: 140px; border: none; padding: 0;"></td>
                     </tr>
                 </table>
                 
@@ -1354,7 +1354,7 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
             <div class="report-header" style="border-bottom: 2.5px solid #1e40af; padding-bottom: 12px; margin-bottom: 18px;">
                 <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
                     <tr>
-                        <td style="width: 85px; vertical-align: middle; text-align: left; border: none; padding: 0;">
+                        <td style="width: 140px; vertical-align: middle; text-align: left; border: none; padding: 0;">
                             ${logoImg}
                         </td>
                         <td style="vertical-align: middle; text-align: center; border: none; padding: 0 10px;">
@@ -1363,7 +1363,7 @@ function getInstitutionHeaderHtml(selectedInstitution, selectedCategory, recordC
                             <h2 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase;">YENEPOYA MEDICAL COLLEGE</h2>
                             <h3 style="margin: 2px 0 0 0; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">MANGALURU, INDIA</h3>
                         </td>
-                        <td style="width: 85px; border: none; padding: 0;"></td>
+                        <td style="width: 140px; border: none; padding: 0;"></td>
                     </tr>
                 </table>
                 
