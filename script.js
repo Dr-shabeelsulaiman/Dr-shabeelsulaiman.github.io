@@ -1494,6 +1494,91 @@ function downloadCurrentPreviewHtml() {
     showSuccess('HTML Report downloaded successfully!');
 }
 
+async function exportPdfFile() {
+    const element = document.getElementById('printPreviewContent');
+    if (!element) return;
+    
+    showSpinner('Generating official PDF document...');
+    
+    const filename = (currentPreviewFilename || 'logbook-report.html').replace(/\.html$/i, '.pdf');
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+    
+    try {
+        if (typeof html2pdf !== 'undefined') {
+            await html2pdf().set(opt).from(element).save();
+            showSuccess('PDF downloaded successfully!');
+        } else {
+            downloadCurrentPreviewHtml();
+        }
+    } catch (err) {
+        console.error('PDF generation error:', err);
+        downloadCurrentPreviewHtml();
+    } finally {
+        hideSpinner();
+    }
+}
+
+async function sharePdfFile() {
+    const element = document.getElementById('printPreviewContent');
+    if (!element) return;
+    
+    const filename = (currentPreviewFilename || 'logbook-report.html').replace(/\.html$/i, '.pdf');
+    
+    if (typeof html2pdf === 'undefined') {
+        exportPdfFile();
+        return;
+    }
+    
+    showSpinner('Preparing PDF for WhatsApp...');
+    
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+    
+    try {
+        const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+        const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            await navigator.share({
+                files: [pdfFile],
+                title: 'Urology Logbook Report - Dr. Shabeel Sulaiman',
+                text: 'Official Urology Logbook Report of Dr. Shabeel Sulaiman'
+            });
+        } else {
+            // Fallback: download PDF directly
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showSuccess('PDF downloaded! You can now send this PDF file directly on WhatsApp.');
+        }
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error('Share error:', err);
+            exportPdfFile();
+        }
+    } finally {
+        hideSpinner();
+    }
+}
+
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
     const startDateFormatted = formatDate(startDate);
     const endDateFormatted = formatDate(endDate);
