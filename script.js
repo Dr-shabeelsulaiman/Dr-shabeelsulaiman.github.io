@@ -59,19 +59,23 @@ let activeView = 'home';
 
 // Map already entered data and variants to the 4 standard institutions
 function normalizeInstitution(rawHospital) {
-    if (!rawHospital) return 'Yenepoya Medical College'; // Map old/empty data to Yenepoya Medical College
+    if (!rawHospital) return 'Yenepoya Medical College';
     const clean = rawHospital.toString().trim().toLowerCase();
     
-    if (clean.includes('training')) {
+    // Explicit matches for newly selectable institutions
+    if (clean === 'yenepoya training period' || clean.includes('training period')) {
         return 'Yenepoya Training Period';
     }
-    if (clean.includes('thrissur') || clean.includes('gmc thrissur') || clean.includes('tmc')) {
+    if (clean === 'thrissur medical college' || clean === 'gmc thrissur') {
         return 'Thrissur Medical College';
     }
-    if (clean.includes('calicut') || clean.includes('kozhikode') || clean.includes('cmc') || clean.includes('gmc calicut')) {
+    if (clean === 'calicut medical college' || clean === 'gmc calicut') {
         return 'Calicut Medical College';
     }
-    // Default mapped to Yenepoya Medical College
+    if (clean.includes('yenepoya') || clean.includes('ymc')) {
+        return 'Yenepoya Medical College';
+    }
+    // All legacy / previously entered data (including old default 'Govt Medical College Thrissur') maps to Yenepoya Medical College
     return 'Yenepoya Medical College';
 }
 
@@ -1477,7 +1481,79 @@ function executeNativePrint() {
 
 function downloadCurrentPreviewHtml() {
     if (!currentPreviewHtml) return;
-    const blob = new Blob([currentPreviewHtml], { type: 'text/html' });
+    
+    // Create self-contained standalone HTML report with mobile print script and embedded logo
+    const standaloneHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Logbook Report - Dr. Shabeel Sulaiman</title>
+    <style>
+        @page { size: A4 portrait; margin: 10mm 12mm; }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11.5px; line-height: 1.45; max-width: 210mm; margin-left: auto; margin-right: auto; background: #ffffff; }
+        .mobile-toolbar { background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 20px; text-align: center; }
+        .btn-print-action { background: #1e40af; color: #ffffff; border: none; border-radius: 6px; padding: 12px 30px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-print-action:active { background: #1e3a8a; transform: scale(0.98); }
+        .mobile-instructions { margin-top: 10px; padding: 10px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 11.5px; color: #1e3a8a; text-align: left; line-height: 1.6; }
+        .compact-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+        .compact-table th, .compact-table td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: center; vertical-align: middle; }
+        .compact-table th { background: #f1f5f9; font-weight: 700; color: #334155; font-size: 10.5px; text-transform: uppercase; }
+        .patient-record { margin-bottom: 16px; page-break-inside: avoid; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; background: #ffffff; }
+        .patient-header { background: #1e40af; color: white; padding: 7px 12px; margin: -12px -12px 10px -12px; border-radius: 5px 5px 0 0; display: flex; justify-content: space-between; align-items: center; }
+        .patient-header h3 { margin: 0; font-size: 13px; font-weight: 700; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .sign-row { margin-top: 40px; display: flex; justify-content: space-between; text-align: center; page-break-inside: avoid; }
+        .sign-box { width: 200px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px; font-weight: bold; }
+        @media print { 
+            .no-print { display: none !important; }
+            body { margin: 0; padding: 0; max-width: 100%; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print mobile-toolbar">
+        <button type="button" class="btn-print-action" onclick="handleMobilePrint()">
+            🖨️ Print Report (Save as PDF)
+        </button>
+        <div class="mobile-instructions">
+            <strong>📱 How to Save as PDF:</strong><br>
+            • <strong>Android (Chrome):</strong> Tap the button above, or tap <strong>3 Dots (⋮) &rarr; Share &rarr; Print &rarr; Save as PDF</strong>.<br>
+            • <strong>iPhone / iPad (Safari):</strong> Tap <strong>Share (📤) &rarr; Print &rarr; Pinch-out</strong> on preview to save as PDF.
+        </div>
+    </div>
+
+    ${currentPreviewHtml}
+
+    <div class="no-print mobile-toolbar" style="margin-top: 30px;">
+        <button type="button" class="btn-print-action" onclick="handleMobilePrint()">
+            🖨️ Print Report (Save as PDF)
+        </button>
+    </div>
+
+    <script>
+        function handleMobilePrint() {
+            var printed = false;
+            var beforePrint = function() { printed = true; };
+            if (window.matchMedia) {
+                var mediaQueryList = window.matchMedia('print');
+                mediaQueryList.addListener(function(mql) { if (mql.matches) beforePrint(); });
+            }
+            window.addEventListener('beforeprint', beforePrint);
+            window.print();
+            setTimeout(function() {
+                window.removeEventListener('beforeprint', beforePrint);
+                if (!printed) {
+                    alert('Print dialog did not open.\\n\\nTo save as PDF:\\n1. Tap the browser menu (3 dots or Share icon)\\n2. Select "Print"\\n3. Choose "Save as PDF"');
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>`;
+
+    const blob = new Blob([standaloneHtml], { type: 'text/html' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1486,7 +1562,7 @@ function downloadCurrentPreviewHtml() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-    showSuccess('Report downloaded successfully! You can open it in any browser to view or print.');
+    showSuccess('Report downloaded! Open file & tap "Print Report" to save as PDF.');
 }
 
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'Yenepoya Medical College') {
@@ -1531,6 +1607,9 @@ function generatePrintReport(patientsToPrint, startDate, endDate, format, includ
     // Switch to dedicated full-page print preview view
     showView('printpreview');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Download standalone offline report file
+    downloadCurrentPreviewHtml();
 }
 
 function createDownloadableReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'All') {
