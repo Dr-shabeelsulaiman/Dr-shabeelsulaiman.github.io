@@ -1,0 +1,4 @@
+backup_pre_pull/
+git/
+.DS_Store
+*.log

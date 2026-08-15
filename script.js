@@ -54,10 +54,10 @@ function setupSearch() {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
     
-    // Standard input event
+    // Standard input event - fixed function name
     searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        filterPatients(searchTerm);
+        const searchTerm = this.value.toLowerCase().trim();
+        filterRecords(searchTerm);
     });
     
     // Mobile-specific fixes
@@ -89,45 +89,70 @@ async function handleFormSubmit(event) {
     }
     
     const formData = getFormData();
+    const editingId = document.getElementById('editingRecordId') ? document.getElementById('editingRecordId').value.trim() : '';
+    const isEdit = !!editingId;
     
     try {
-        showLoading(true);
+        showLoading(true, isEdit);
         
-        // Save to Google Sheets
-        const result = await saveRecordToGoogleSheets(formData);
+        let result;
+        if (isEdit) {
+            result = await updateRecordInGoogleSheets(formData, editingId);
+        } else {
+            result = await saveRecordToGoogleSheets(formData);
+        }
         
         if (result.success) {
-            // Add to local array
-            records.push({
-                ...formData,
-                id: result.id || Date.now().toString(),
-                timestamp: new Date().toISOString()
-            });
+            if (isEdit) {
+                // Update in local records array
+                const idx = records.findIndex(r => (r.id || r.timestamp) === editingId);
+                if (idx !== -1) {
+                    records[idx] = {
+                        ...records[idx],
+                        ...formData,
+                        id: editingId
+                    };
+                }
+                displayRecords(records);
+                cancelEdit();
+                showSuccess('Procedure record updated successfully!');
+            } else {
+                // Add immediately to local records array at the beginning
+                const newRecord = {
+                    ...formData,
+                    id: result.id || 'PAT_' + Date.now(),
+                    timestamp: new Date().toISOString()
+                };
+                records.unshift(newRecord);
+                displayRecords(records);
+                
+                // Reset form
+                const form = document.getElementById('procedureForm');
+                if (form) form.reset();
+                const dateEl = document.getElementById('procedureDate');
+                if (dateEl) dateEl.valueAsDate = new Date();
+                
+                // Re-apply category after reset
+                const cat = sessionStorage.getItem('logbookCategory');
+                if (cat) document.getElementById('category').value = cat;
+                
+                showSuccess('Procedure record saved successfully!');
+            }
             
-            // Reset form
-            const form = document.getElementById('procedureForm');
-            if (form) form.reset();
-            const dateEl = document.getElementById('procedureDate');
-            if (dateEl) dateEl.valueAsDate = new Date();
-            // Re-apply category after reset
-            const cat = sessionStorage.getItem('logbookCategory');
-            if (cat) document.getElementById('category').value = cat;
-            
-            // Show success message
-            showSuccess('Procedure record saved successfully!');
-            
-            // Refresh table
-            loadRecords();
+            // Background sync with database after short delay
+            setTimeout(() => {
+                loadRecords(true);
+            }, 2500);
         } else {
-            console.error('Save failed with result:', result);
+            console.error('Operation failed with result:', result);
             const errorMsg = result.error || result.message || 'Unknown error occurred';
-            showError(`Failed to save procedure record: ${errorMsg}`);
+            showError(`Failed: ${errorMsg}`);
         }
     } catch (error) {
-        console.error('Error saving record:', error);
+        console.error('Error saving/updating record:', error);
         showError('An error occurred while saving the procedure record.');
     } finally {
-        showLoading(false);
+        showLoading(false, isEdit);
     }
 }
 
@@ -179,13 +204,6 @@ async function saveRecordToGoogleSheets(recordData) {
     try {
         console.log('Attempting to save record:', recordData);
         console.log('Using Script URL:', CONFIG.SCRIPT_URL);
-        console.log('Current origin:', window.location.origin);
-        
-        // Check if running from file:// protocol
-        if (window.location.protocol === 'file:') {
-            console.warn('Running from file:// - CORS will be blocked. Please use http://localhost:8000');
-            return { success: false, message: 'Please access the website via http://localhost:8000 instead of opening the HTML file directly' };
-        }
         
         // Build URL with parameters for GET request
         const params = new URLSearchParams({
@@ -212,13 +230,10 @@ async function saveRecordToGoogleSheets(recordData) {
             mode: 'cors'
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
-        
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Error response body:', errorText);
-            throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
@@ -226,19 +241,6 @@ async function saveRecordToGoogleSheets(recordData) {
         return result;
     } catch (error) {
         console.error('Google Sheets API Error:', error);
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
-        
-        // For development, return mock success if URL is placeholder
-        if (CONFIG.SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-            console.log('Using mock data - please configure Google Apps Script URL');
-            return { success: true, id: Date.now().toString() };
-        }
-        
-        // Return detailed error for debugging
         return { 
             success: false, 
             message: `Network error: ${error.message}`,
@@ -247,21 +249,99 @@ async function saveRecordToGoogleSheets(recordData) {
     }
 }
 
-async function loadRecords() {
+async function updateRecordInGoogleSheets(recordData, id) {
     try {
-        showLoading(true);
+        console.log('Attempting to update record ID:', id, recordData);
         
-        // Check if running from file:// protocol
-        if (window.location.protocol === 'file:') {
-            console.warn('Running from file:// - CORS will be blocked. Please use http://localhost:8000');
-            records = getMockRecords();
-            displayRecords(records);
-            showLoading(false);
-            return;
+        const params = new URLSearchParams({
+            action: 'updateRecord',
+            id: id,
+            category: recordData.category || '',
+            name: recordData.name,
+            age: recordData.age,
+            sex: recordData.sex,
+            ipNumber: recordData.ipNumber || '',
+            procedureDate: recordData.procedureDate,
+            diagnosis: recordData.diagnosis,
+            procedureDone: recordData.procedureDone,
+            observed: recordData.observed || 'No',
+            assisted: recordData.assisted || 'No',
+            performedUnderSupervision: recordData.performedUnderSupervision || 'No',
+            independentlyPerformed: recordData.independentlyPerformed || 'No',
+            hospital: recordData.hospital || '',
+            supervisor: recordData.supervisor || '',
+            remarks: recordData.remarks || ''
+        });
+        
+        const response = await fetch(`${CONFIG.SCRIPT_URL}?${params.toString()}`, {
+            method: 'GET',
+            mode: 'cors'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Try to load from Google Sheets first
-        if (CONFIG.SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Google Sheets Update Error:', error);
+        return {
+            success: false,
+            message: `Network error: ${error.message}`,
+            error: error.message
+        };
+    }
+}
+
+async function deleteRecordFromGoogleSheets(id) {
+    try {
+        console.log('Attempting to delete record ID:', id);
+        
+        const params = new URLSearchParams({
+            action: 'deleteRecord',
+            id: id
+        });
+        
+        const response = await fetch(`${CONFIG.SCRIPT_URL}?${params.toString()}`, {
+            method: 'GET',
+            mode: 'cors'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Google Sheets Delete Error:', error);
+        return {
+            success: false,
+            message: `Network error: ${error.message}`,
+            error: error.message
+        };
+    }
+}
+
+async function loadRecords(silent = false) {
+    const tableBody = document.getElementById('recordsTableBody');
+    const noRecords = document.getElementById('noRecords');
+    
+    try {
+        if (!silent && tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="12" class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                        Loading records from database...
+                    </td>
+                </tr>
+            `;
+            if (noRecords) noRecords.style.display = 'none';
+        }
+        
+        if (CONFIG.SCRIPT_URL && CONFIG.SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
             const response = await fetch(`${CONFIG.SCRIPT_URL}?action=getRecords`, {
                 method: 'GET',
                 mode: 'cors'
@@ -269,25 +349,36 @@ async function loadRecords() {
             
             if (response.ok) {
                 const result = await response.json();
-                if (result.success) {
-                    records = result.data.records || [];
-                } else {
-                    throw new Error(result.message);
+                if (result.success && result.data && Array.isArray(result.data.records)) {
+                    records = result.data.records;
+                } else if (result.records && Array.isArray(result.records)) {
+                    records = result.records;
+                } else if (Array.isArray(result.data)) {
+                    records = result.data;
                 }
+            } else {
+                throw new Error(`HTTP ${response.status}`);
             }
-        } else {
-            // Use mock data for development
-            records = getMockRecords();
         }
         
         displayRecords(records);
     } catch (error) {
         console.error('Error loading records:', error);
-        // Use mock data as fallback
-        records = getMockRecords();
+        if (!records) records = [];
         displayRecords(records);
-    } finally {
-        showLoading(false);
+        if (records.length === 0 && tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="12" class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Unable to connect to live database. 
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="loadRecords()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
     }
 }
 
@@ -297,69 +388,103 @@ function displayRecords(recordsToDisplay) {
     
     if (!tableBody) return;
     
-    // Filter by current category if one is selected
-    const currentCategory = sessionStorage.getItem('logbookCategory');
+    let list = Array.isArray(recordsToDisplay) ? [...recordsToDisplay] : [...records];
+    
+    // Filter by current category (case-insensitive & trimmed)
+    const currentCategory = (sessionStorage.getItem('logbookCategory') || '').toString().trim().toLowerCase();
     if (currentCategory) {
-        recordsToDisplay = recordsToDisplay.filter(r => {
-            const recCat = (r.category || '').toString().trim();
+        list = list.filter(r => {
+            const recCat = (r.category || '').toString().trim().toLowerCase();
             return recCat === currentCategory;
         });
     }
     
-    if (recordsToDisplay.length === 0) {
+    // Update badge counter in table header
+    const countBadge = document.getElementById('recordCountBadge');
+    if (countBadge) {
+        countBadge.textContent = `${list.length} record${list.length === 1 ? '' : 's'}`;
+    }
+    
+    if (list.length === 0) {
         tableBody.innerHTML = '';
         if (noRecords) {
             noRecords.style.display = 'block';
             const msg = noRecords.querySelector('p');
-            if (msg && currentCategory) msg.textContent = `No ${currentCategory.toLowerCase()} procedure records found`;
+            if (msg) {
+                const catName = sessionStorage.getItem('logbookCategory') || 'procedure';
+                msg.textContent = `No ${catName.toLowerCase()} procedure records found`;
+            }
         }
         return;
     }
     
     if (noRecords) noRecords.style.display = 'none';
     
-    tableBody.innerHTML = recordsToDisplay.map(record => `
-        <tr>
-            <td>${formatDate(record.procedureDate || record.visitDate)}</td>
-            <td>
-                <strong>${escapeHtml(record.name)}</strong>
-                ${isNewRecord(record.procedureDate || record.visitDate) ? '<span class="badge bg-success ms-1">New</span>' : ''}
-            </td>
-            <td>${record.age}</td>
-            <td>${record.sex || record.gender || '-'}</td>
-            <td>${record.ipNumber || '-'}</td>
-            <td>${truncateText(escapeHtml(record.diagnosis), 40)}</td>
-            <td>${truncateText(escapeHtml(record.procedureDone || record.chiefComplaint || '-'), 40)}</td>
-            <td>${record.observed === 'Yes' ? '<i class="bi bi-check-lg text-info"></i>' : '-'}</td>
-            <td>${record.assisted === 'Yes' ? '<i class="bi bi-check-lg text-warning"></i>' : '-'}</td>
-            <td>${record.performedUnderSupervision === 'Yes' ? '<i class="bi bi-check-lg text-primary"></i>' : '-'}</td>
-            <td>${record.independentlyPerformed === 'Yes' ? '<i class="bi bi-check-lg text-success"></i>' : '-'}</td>
-            <td>
-                <button class="btn btn-sm btn-outline-primary" onclick="viewRecord('${record.id || record.timestamp}')">
-                    <i class="bi bi-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-success" onclick="printRecord('${record.id || record.timestamp}')">
-                    <i class="bi bi-printer"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+    // Sort records newest first by date or timestamp
+    list.sort((a, b) => {
+        const dateA = new Date(a.procedureDate || a.timestamp || 0).getTime();
+        const dateB = new Date(b.procedureDate || b.timestamp || 0).getTime();
+        return dateB - dateA;
+    });
+    
+    tableBody.innerHTML = list.map(record => {
+        const obs = (record.observed || '').toString().toLowerCase() === 'yes';
+        const asst = (record.assisted || '').toString().toLowerCase() === 'yes';
+        const sup = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
+        const ind = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
+        
+        return `
+            <tr>
+                <td>${formatDate(record.procedureDate || record.visitDate)}</td>
+                <td>
+                    <strong>${escapeHtml(record.name || 'Unnamed')}</strong>
+                    ${isNewRecord(record.procedureDate || record.visitDate) ? '<span class="badge bg-success ms-1">New</span>' : ''}
+                </td>
+                <td>${record.age !== undefined && record.age !== null ? record.age : '-'}</td>
+                <td>${record.sex || record.gender || '-'}</td>
+                <td>${record.ipNumber || '-'}</td>
+                <td>${truncateText(escapeHtml(record.diagnosis || '-'), 35)}</td>
+                <td>${truncateText(escapeHtml(record.procedureDone || record.chiefComplaint || '-'), 35)}</td>
+                <td class="text-center">${obs ? '<i class="bi bi-check-circle-fill text-info" title="Observed"></i>' : '-'}</td>
+                <td class="text-center">${asst ? '<i class="bi bi-check-circle-fill text-warning" title="Assisted"></i>' : '-'}</td>
+                <td class="text-center">${sup ? '<i class="bi bi-check-circle-fill text-primary" title="Under Supervision"></i>' : '-'}</td>
+                <td class="text-center">${ind ? '<i class="bi bi-check-circle-fill text-success" title="Independently Performed"></i>' : '-'}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" title="View Details" onclick="viewRecord('${escapeHtml(record.id || record.timestamp || '')}')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-success" title="Print Record" onclick="printRecord('${escapeHtml(record.id || record.timestamp || '')}')">
+                            <i class="bi bi-printer"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 function filterRecords(searchTerm) {
-    const currentCategory = sessionStorage.getItem('logbookCategory');
+    const currentCategory = (sessionStorage.getItem('logbookCategory') || '').toString().trim().toLowerCase();
     let pool = records;
     if (currentCategory) {
         pool = records.filter(r => {
-            const recCat = (r.category || '').toString().trim();
+            const recCat = (r.category || '').toString().trim().toLowerCase();
             return recCat === currentCategory;
         });
     }
     
+    if (!searchTerm) {
+        displayRecords(records);
+        return;
+    }
+    
     const filtered = pool.filter(record => {
-        return record.name.toLowerCase().includes(searchTerm) ||
+        return (record.name || '').toLowerCase().includes(searchTerm) ||
                (record.ipNumber || '').toLowerCase().includes(searchTerm) ||
                (record.diagnosis || '').toLowerCase().includes(searchTerm) ||
+               (record.hospital || '').toLowerCase().includes(searchTerm) ||
+               (record.remarks || '').toLowerCase().includes(searchTerm) ||
                (record.procedureDone || record.chiefComplaint || '').toLowerCase().includes(searchTerm);
     });
     
@@ -433,6 +558,166 @@ function viewRecord(recordId) {
     
     const modal = new bootstrap.Modal(document.getElementById('procedureModal'));
     modal.show();
+}
+
+function editRecordFromModal() {
+    if (!currentRecord) return;
+    const modalEl = document.getElementById('procedureModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+    
+    editRecord(currentRecord.id || currentRecord.timestamp);
+}
+
+function editRecord(recordId) {
+    const record = records.find(r => (r.id || r.timestamp) === recordId);
+    if (!record) {
+        showError('Record not found.');
+        return;
+    }
+    
+    // Set editing ID in hidden field
+    const editIdInput = document.getElementById('editingRecordId');
+    if (editIdInput) editIdInput.value = record.id || record.timestamp;
+    
+    // Show edit banner with patient name & ID
+    const editBanner = document.getElementById('editBanner');
+    if (editBanner) {
+        editBanner.classList.remove('d-none');
+        const nameSpan = document.getElementById('editBannerPatientName');
+        if (nameSpan) nameSpan.textContent = record.name || 'Unnamed';
+        const idSpan = document.getElementById('editBannerId');
+        if (idSpan) idSpan.textContent = record.id || '';
+    }
+    
+    // Update button states
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const submitBtnIcon = document.getElementById('submitBtnIcon');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    
+    if (submitBtn) {
+        submitBtn.className = 'btn btn-warning';
+    }
+    if (submitBtnText) submitBtnText.textContent = 'Update Procedure';
+    if (submitBtnIcon) submitBtnIcon.className = 'bi bi-check2-circle me-1';
+    if (cancelEditBtn) cancelEditBtn.classList.remove('d-none');
+    if (resetBtn) resetBtn.classList.add('d-none');
+    
+    // Switch active category if necessary
+    if (record.category) {
+        const catInput = document.getElementById('category');
+        if (catInput) catInput.value = record.category;
+    }
+    
+    // Populate form fields
+    document.getElementById('patientName').value = record.name || '';
+    document.getElementById('patientAge').value = record.age !== undefined && record.age !== null ? record.age : '';
+    document.getElementById('patientSex').value = record.sex || record.gender || '';
+    document.getElementById('ipNumber').value = record.ipNumber || '';
+    
+    // Parse date for HTML date input (YYYY-MM-DD)
+    if (record.procedureDate || record.visitDate) {
+        const rawDate = record.procedureDate || record.visitDate;
+        let dateVal = '';
+        if (rawDate.includes('T')) {
+            dateVal = rawDate.split('T')[0];
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+            dateVal = rawDate;
+        } else {
+            const d = new Date(rawDate);
+            if (!isNaN(d.getTime())) {
+                dateVal = d.toISOString().split('T')[0];
+            }
+        }
+        if (dateVal) {
+            document.getElementById('procedureDate').value = dateVal;
+        }
+    }
+    
+    document.getElementById('diagnosis').value = record.diagnosis || '';
+    document.getElementById('procedureDone').value = record.procedureDone || record.chiefComplaint || '';
+    
+    document.getElementById('observed').checked = (record.observed || '').toString().toLowerCase() === 'yes';
+    document.getElementById('assisted').checked = (record.assisted || '').toString().toLowerCase() === 'yes';
+    document.getElementById('performedUnderSupervision').checked = (record.performedUnderSupervision || '').toString().toLowerCase() === 'yes';
+    document.getElementById('independentlyPerformed').checked = (record.independentlyPerformed || '').toString().toLowerCase() === 'yes';
+    
+    document.getElementById('hospital').value = record.hospital || '';
+    document.getElementById('remarks').value = record.remarks || '';
+    
+    // Smooth scroll to form
+    const addSection = document.getElementById('add-procedure');
+    if (addSection) {
+        addSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    document.getElementById('patientName').focus();
+}
+
+function cancelEdit() {
+    const editIdInput = document.getElementById('editingRecordId');
+    if (editIdInput) editIdInput.value = '';
+    
+    const editBanner = document.getElementById('editBanner');
+    if (editBanner) editBanner.classList.add('d-none');
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const submitBtnIcon = document.getElementById('submitBtnIcon');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    
+    if (submitBtn) submitBtn.className = 'btn btn-success';
+    if (submitBtnText) submitBtnText.textContent = 'Save Procedure';
+    if (submitBtnIcon) submitBtnIcon.className = 'bi bi-save me-1';
+    if (cancelEditBtn) cancelEditBtn.classList.add('d-none');
+    if (resetBtn) resetBtn.classList.remove('d-none');
+    
+    const form = document.getElementById('procedureForm');
+    if (form) form.reset();
+    const dateEl = document.getElementById('procedureDate');
+    if (dateEl) dateEl.valueAsDate = new Date();
+    const cat = sessionStorage.getItem('logbookCategory');
+    if (cat) document.getElementById('category').value = cat;
+}
+
+function deleteRecordFromModal() {
+    if (!currentRecord) return;
+    deleteRecord(currentRecord.id || currentRecord.timestamp);
+}
+
+async function deleteRecord(recordId) {
+    const record = records.find(r => (r.id || r.timestamp) === recordId);
+    const name = record ? (record.name || 'this record') : 'this record';
+    const proc = record && record.procedureDone ? ` (${record.procedureDone})` : '';
+    
+    const confirmed = window.confirm(`Are you sure you want to permanently delete the procedure record for "${name}"${proc}?\n\nThis action cannot be undone.`);
+    if (!confirmed) return;
+    
+    // Close modal if open
+    const modalEl = document.getElementById('procedureModal');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+    
+    // Optimistic UI delete
+    records = records.filter(r => (r.id || r.timestamp) !== recordId);
+    displayRecords(records);
+    showSuccess(`Procedure record for "${name}" was deleted successfully.`);
+    
+    // If currently editing this record, cancel edit mode
+    const editIdInput = document.getElementById('editingRecordId');
+    if (editIdInput && editIdInput.value === recordId) {
+        cancelEdit();
+    }
+    
+    // Delete from Google Sheets backend
+    const result = await deleteRecordFromGoogleSheets(recordId);
+    if (!result.success) {
+        console.warn('Backend delete warning:', result.message);
+    }
 }
 
 function printRecord(recordId) {
@@ -525,8 +810,39 @@ function isValidPhone(phone) {
 }
 
 function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    if (!dateString) return '-';
+    try {
+        if (typeof dateString === 'string') {
+            const cleanStr = dateString.trim();
+            // Handle ISO string format YYYY-MM-DDTHH:MM:SS
+            if (cleanStr.includes('T')) {
+                const datePart = cleanStr.split('T')[0];
+                const parts = datePart.split('-');
+                if (parts.length === 3) {
+                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    const year = parts[0];
+                    const month = months[parseInt(parts[1], 10) - 1] || parts[1];
+                    const day = parts[2];
+                    return `${day}-${month}-${year}`;
+                }
+            }
+            // Handle YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
+                const parts = cleanStr.split('-');
+                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                const year = parts[0];
+                const month = months[parseInt(parts[1], 10) - 1] || parts[1];
+                const day = parts[2];
+                return `${day}-${month}-${year}`;
+            }
+        }
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return String(dateString);
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return d.toLocaleDateString(undefined, options);
+    } catch (e) {
+        return String(dateString);
+    }
 }
 
 function isNewRecord(visitDate) {
@@ -580,60 +896,25 @@ function showError(message) {
     }, 5000);
 }
 
-function showLoading(show) {
-    const buttons = document.querySelectorAll('button[type="submit"]');
-    buttons.forEach(button => {
-        if (show) {
-            button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+function showLoading(show, isEdit = false) {
+    const submitBtn = document.getElementById('submitBtn');
+    if (!submitBtn) return;
+    
+    if (show) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${isEdit ? 'Updating...' : 'Saving...'}`;
+    } else {
+        submitBtn.disabled = false;
+        if (isEdit) {
+            submitBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Update Procedure';
         } else {
-            button.disabled = false;
-            button.innerHTML = '<i class="bi bi-save me-1"></i>Save Procedure';
+            submitBtn.innerHTML = '<i class="bi bi-save me-1"></i>Save Procedure';
         }
-    });
+    }
 }
 
 function getMockRecords() {
-    return [
-        {
-            id: '1',
-            category: 'Minor',
-            name: 'John Doe',
-            age: 45,
-            sex: 'Male',
-            ipNumber: 'IP-2024-001',
-            procedureDate: '2024-06-01',
-            diagnosis: 'Tension headache, possible hypertension',
-            procedureDone: 'Wound Dressing',
-            observed: 'Yes',
-            assisted: 'No',
-            performedUnderSupervision: 'Yes',
-            independentlyPerformed: 'No',
-            hospital: 'City Hospital',
-            supervisor: 'Dr. Ahmed Khan',
-            remarks: 'Patient advised to follow up in 2 weeks',
-            timestamp: '2024-06-01T10:30:00.000Z'
-        },
-        {
-            id: '2',
-            category: 'Major',
-            name: 'Jane Smith',
-            age: 32,
-            sex: 'Female',
-            ipNumber: 'IP-2024-002',
-            procedureDate: '2024-05-30',
-            diagnosis: 'Acute appendicitis',
-            procedureDone: 'Appendectomy',
-            observed: 'No',
-            assisted: 'Yes',
-            performedUnderSupervision: 'No',
-            independentlyPerformed: 'Yes',
-            hospital: 'Metro Medical Center',
-            supervisor: 'Dr. Rajesh Patel',
-            remarks: 'Laparoscopic approach used',
-            timestamp: '2024-05-30T14:15:00.000Z'
-        }
-    ];
+    return [];
 }
 
 // Print date range functionality
