@@ -593,7 +593,12 @@ body {
 @media print {
     @page {
         size: A4 portrait;
-        margin: 10mm 12mm;
+        margin: 8mm 10mm;
+    }
+    
+    *, *::before, *::after {
+        box-shadow: none !important;
+        text-shadow: none !important;
     }
     
     html, body {
@@ -602,23 +607,27 @@ body {
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
     }
     
-    /* Hide everything on screen except printContainer */
-    body > *:not(#printContainer) {
+    /* Hide all modals, backdrops, navbars, and interactive UI */
+    .modal, .modal-backdrop, .modal-open, .navbar, .mobile-bottom-nav, .context-strip, .btn, #viewModeToggle, .toast-container, .no-print {
         display: none !important;
+        visibility: hidden !important;
     }
     
-    .modal, .modal-backdrop, .navbar, .mobile-bottom-nav, .context-strip, .btn, #viewModeToggle {
+    body > *:not(#printContainer) {
         display: none !important;
     }
     
     #printContainer {
         display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
+        position: relative !important;
+        left: 0 !important;
+        top: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
@@ -627,9 +636,5 @@ body {
     
     #printContainer * {
         visibility: visible !important;
-    }
-    
-    .no-print {
-        display: none !important;
     }
 }
