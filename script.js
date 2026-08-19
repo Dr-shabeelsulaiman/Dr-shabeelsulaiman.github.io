@@ -93,18 +93,37 @@ function initializeApp() {
     const savedCat = localStorage.getItem('logbookCategory') || sessionStorage.getItem('logbookCategory') || 'Major';
     applyCategory(savedCat);
 
-    // 3. Set today's date as default on the form
+    // 3. Instant Cache Loading: load cached records immediately for 0ms instant display
+    try {
+        const cached = localStorage.getItem('cached_logbook_records');
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                records = parsed;
+            }
+        }
+    } catch (e) {
+        console.error('Error reading cached records:', e);
+    }
+
+    // 4. Set today's date as default on the form
     const dateEl = document.getElementById('procedureDate');
     if (dateEl) dateEl.valueAsDate = new Date();
-
-    // 4. Load database records
-    loadRecords();
 
     // 5. Setup event listeners & search
     setupEventListeners();
     setupSearch();
 
-    // 6. Start on Home View
+    // 6. Refresh UI with cached records immediately
+    updateHeroStats();
+    if (records && records.length > 0) {
+        displayRecords(records);
+    }
+
+    // 7. Load fresh records from Google Apps Script in background
+    loadRecords(records && records.length > 0);
+
+    // 8. Start on Home View
     showView('home');
 }
 
@@ -365,6 +384,13 @@ async function handleFormSubmit(event) {
                 showSuccess('Procedure record saved successfully!');
             }
             
+            // Save to localStorage cache immediately
+            try {
+                localStorage.setItem('cached_logbook_records', JSON.stringify(records));
+            } catch (e) {
+                console.warn('Could not update cache:', e);
+            }
+            
             updateHeroStats();
             
             // Background sync with database after short delay
@@ -524,15 +550,17 @@ async function loadRecords(silent = false) {
     const noRecords = document.getElementById('noRecords');
     
     try {
-        if (!silent && tableBody) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="12" class="text-center py-4 text-muted">
-                        <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
-                        Loading records from database...
-                    </td>
-                </tr>
-            `;
+        if (!silent && (!records || records.length === 0)) {
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="12" class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                            Loading records from database...
+                        </td>
+                    </tr>
+                `;
+            }
             if (mobileContainer) {
                 mobileContainer.innerHTML = `
                     <div class="text-center py-4 text-muted">
@@ -552,12 +580,23 @@ async function loadRecords(silent = false) {
             
             if (response.ok) {
                 const result = await response.json();
+                let freshRecords = null;
                 if (result.success && result.data && Array.isArray(result.data.records)) {
-                    records = result.data.records;
+                    freshRecords = result.data.records;
                 } else if (result.records && Array.isArray(result.records)) {
-                    records = result.records;
+                    freshRecords = result.records;
                 } else if (Array.isArray(result.data)) {
-                    records = result.data;
+                    freshRecords = result.data;
+                }
+                
+                if (freshRecords && Array.isArray(freshRecords)) {
+                    records = freshRecords;
+                    // Cache to localStorage for instant 0ms loading next time
+                    try {
+                        localStorage.setItem('cached_logbook_records', JSON.stringify(freshRecords));
+                    } catch (e) {
+                        console.warn('Could not cache records:', e);
+                    }
                 }
             }
         }
