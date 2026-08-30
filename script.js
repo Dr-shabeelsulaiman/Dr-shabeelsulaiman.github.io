@@ -843,7 +843,7 @@ function displayRecords(recordsToDisplay) {
                     
                     <div class="d-flex flex-wrap gap-1 mb-2">
                         ${ind ? '<span class="role-chip role-chip-ind"><i class="bi bi-person-check-fill"></i> Independent</span>' : ''}
-                        ${sup ? '<span class="role-chip role-chip-sup"><i class="bi bi-person-badge-fill"></i> Supervised</span>' : ''}
+                        ${sup ? '<span class="role-chip role-chip-sup"><i class="bi bi-person-badge-fill"></i> Performed under supervision</span>' : ''}
                         ${asst ? '<span class="role-chip role-chip-asst"><i class="bi bi-hand-thumbs-up-fill"></i> Assisted</span>' : ''}
                         ${obs ? '<span class="role-chip role-chip-obs"><i class="bi bi-eye-fill"></i> Observed</span>' : ''}
                     </div>
@@ -1705,7 +1705,7 @@ function printRecord(recordId) {
                         <td class="lbl" style="font-weight: bold; color: #475569; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Performance Status:</td>
                         <td colspan="3" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">
                             ${(record.independentlyPerformed || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">✓ Independently Performed</span>' : ''}
-                            ${(record.performedUnderSupervision || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;">✓ Under Supervision</span>' : ''}
+                            ${(record.performedUnderSupervision || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;">✓ Performed under supervision</span>' : ''}
                             ${(record.assisted || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">✓ Assisted</span>' : ''}
                             ${(record.observed || '').toLowerCase() === 'yes' ? '<span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 5px; background: #cffafe; color: #155e75; border: 1px solid #a5f3fc;">✓ Observed</span>' : ''}
                         </td>
@@ -1833,7 +1833,7 @@ function generateDetailedReport(patientsToPrint, includeEmptyFields) {
                 <div><strong>Diagnosis:</strong> ${escapeHtml(p.diagnosis || '-')}</div>
                 <div style="margin-top: 3px;"><strong>Performance Status:</strong> 
                     ${p.independentlyPerformed === 'Yes' ? '<span style="color: #059669; font-weight: bold;">[Independently Performed]</span> ' : ''}
-                    ${p.performedUnderSupervision === 'Yes' ? '<span style="color: #1d4ed8; font-weight: bold;">[Under Supervision]</span> ' : ''}
+                    ${p.performedUnderSupervision === 'Yes' ? '<span style="color: #1d4ed8; font-weight: bold;">[Performed under supervision]</span> ' : ''}
                     ${p.assisted === 'Yes' ? '<span style="color: #d97706; font-weight: bold;">[Assisted]</span> ' : ''}
                     ${p.observed === 'Yes' ? '<span style="color: #0284c7; font-weight: bold;">[Observed]</span> ' : ''}
                 </div>
