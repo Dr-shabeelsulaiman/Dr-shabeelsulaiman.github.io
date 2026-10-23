@@ -37,17 +37,22 @@ const INSTITUTIONS = [
     }
 ];
 
+const DIAGNOSIS_OPTIONS = ['Right RCC','Left RCC','Right Proximal Ureteric Calculus','Right Mid Ureteric Calculus','Right Distal Ureteric Calculus','Left Proximal Ureteric Calculus','Left Mid Ureteric Calculus','Left Distal Ureteric Calculus','Ca Bladder','Prostatomegaly'];
 const MINOR_PROCEDURES = [
+    'Right Radical Nephrectomy','Left Radical Nephrectomy','Right URSL + Dj Stenting','Left URSL + Dj Stenting','Right PCNL','Left PCNL','TURP','T.U.R.B.T',
     'Wound Dressing','Suture Removal','Incision & Drainage','Biopsy','Catheterization',
     'Lumbar Puncture','Thoracocentesis','Paracentesis','FNAC','Skin Biopsy',
     'Nail Avulsion','Debridement','Cauterization','Cryotherapy','Excision of Small Lesion'
 ];
 
 const MAJOR_PROCEDURES = [
+    'Right Radical Nephrectomy','Left Radical Nephrectomy','Right URSL + Dj Stenting','Left URSL + Dj Stenting',
+    'Right PCNL','Left PCNL','TURP','T.U.R.B.T',
+    'Right RIRS','Left RIRS','Right URSL','Left URSL','Right Pyeloplasty','Left Pyeloplasty',
     'Appendectomy','Cholecystectomy','Hernia Repair','Laparotomy','Thyroidectomy',
     'Mastectomy','Hemicolectomy','Gastrectomy','Nephrectomy','Splenectomy',
     'Bowel Resection','Exploratory Laparotomy','Liver Resection','Pancreatectomy','Vascular Bypass',
-    'Right RIRS','Left RIRS','Right URSL','Left URSL','TURP','Right Pyeloplasty','Left Pyeloplasty'
+
 ];
 
 // Global State variables
@@ -264,6 +269,17 @@ function applyCategory(category) {
 
     const catHidden = document.getElementById('category');
     if (catHidden) catHidden.value = category;
+
+    // Update diagnosis datalist
+    const diagList = document.getElementById('diagnosisList');
+    if (diagList) {
+        diagList.innerHTML = '';
+        DIAGNOSIS_OPTIONS.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            diagList.appendChild(opt);
+        });
+    }
 
     // Update procedure datalist
     const list = document.getElementById('procedureList');
