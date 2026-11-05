@@ -113,7 +113,7 @@ function initializeApp() {
 
     // 4. Set today's date as default on the form
     const dateEl = document.getElementById('procedureDate');
-    if (dateEl) dateEl.valueAsDate = new Date();
+    if (dateEl) dateEl.value = normalizeDateToYMD();
 
     // 5. Setup event listeners & search
     setupEventListeners();
@@ -389,7 +389,7 @@ async function handleFormSubmit(event) {
                 const form = document.getElementById('procedureForm');
                 if (form) form.reset();
                 const dateEl = document.getElementById('procedureDate');
-                if (dateEl) dateEl.valueAsDate = new Date();
+                if (dateEl) dateEl.value = normalizeDateToYMD();
                 
                 // Re-apply active category and hospital
                 const cat = sessionStorage.getItem('logbookCategory') || 'Major';
@@ -1058,13 +1058,13 @@ function editRecord(recordId) {
         const rawDate = record.procedureDate || record.visitDate;
         let dateVal = '';
         if (rawDate.includes('T')) {
-            dateVal = rawDate.split('T')[0];
+            dateVal = normalizeDateToYMD(rawDate);
         } else if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
             dateVal = rawDate;
         } else {
             const d = new Date(rawDate);
             if (!isNaN(d.getTime())) {
-                dateVal = d.toISOString().split('T')[0];
+                dateVal = normalizeDateToYMD(d);
             }
         }
         if (dateVal) {
@@ -1114,7 +1114,7 @@ function cancelEdit() {
     const form = document.getElementById('procedureForm');
     if (form) form.reset();
     const dateEl = document.getElementById('procedureDate');
-    if (dateEl) dateEl.valueAsDate = new Date();
+    if (dateEl) dateEl.value = normalizeDateToYMD();
     
     const cat = sessionStorage.getItem('logbookCategory') || 'Major';
     if (cat) document.getElementById('category').value = cat;
@@ -1189,12 +1189,35 @@ function toggleTileStyle(id) {
     }
 }
 
+function normalizeDateToYMD(dateInput) {
+    if (!dateInput) {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+    if (dateInput instanceof Date) {
+        if (isNaN(dateInput.getTime())) return '';
+        return `${dateInput.getFullYear()}-${String(dateInput.getMonth() + 1).padStart(2, '0')}-${String(dateInput.getDate()).padStart(2, '0')}`;
+    }
+    if (typeof dateInput === 'string') {
+        const trimmed = dateInput.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+            return trimmed;
+        }
+        const parsed = new Date(trimmed);
+        if (!isNaN(parsed.getTime())) {
+            const istDate = new Date(parsed.getTime() + (5.5 * 60 * 60 * 1000));
+            return `${istDate.getUTCFullYear()}-${String(istDate.getUTCMonth() + 1).padStart(2, '0')}-${String(istDate.getUTCDate()).padStart(2, '0')}`;
+        }
+    }
+    return String(dateInput);
+}
+
 function formatDate(dateString) {
     if (!dateString) return 'Not recorded';
     
     let year, month, day;
     if (typeof dateString === 'string') {
-        const cleanDate = dateString.split('T')[0];
+        const cleanDate = normalizeDateToYMD(dateString);
         const parts = cleanDate.split('-');
         if (parts.length === 3) {
             year = parseInt(parts[0], 10);
@@ -1303,8 +1326,8 @@ function showPrintRangeModal() {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 30);
     
-    document.getElementById('printEndDate').value = endDate.toISOString().split('T')[0];
-    document.getElementById('printStartDate').value = startDate.toISOString().split('T')[0];
+    document.getElementById('printEndDate').value = normalizeDateToYMD(endDate);
+    document.getElementById('printStartDate').value = normalizeDateToYMD(startDate);
     
     // Set category dropdown to current session category
     const currentCategory = sessionStorage.getItem('logbookCategory') || 'Major';
@@ -1343,8 +1366,8 @@ function printDateRange() {
     
     // Filter records by date range, selected category, and selected institution
     const filteredRecords = records.filter(record => {
-        const visitDate = new Date(record.procedureDate || record.visitDate);
-        const inRange = visitDate >= new Date(startDate) && visitDate <= new Date(endDate + 'T23:59:59');
+        const visitDateYMD = normalizeDateToYMD(record.procedureDate || record.visitDate);
+        const inRange = visitDateYMD >= startDate && visitDateYMD <= endDate;
         const matchesCategory = selectedCategory === 'All' || record.category === selectedCategory;
         const matchesInst = selectedInstitution === 'All' || normalizeInstitution(record.hospital) === selectedInstitution;
         return inRange && matchesCategory && matchesInst;
