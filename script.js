@@ -1372,6 +1372,13 @@ function printDateRange() {
         const matchesInst = selectedInstitution === 'All' || normalizeInstitution(record.hospital) === selectedInstitution;
         return inRange && matchesCategory && matchesInst;
     });
+
+    // Sort chronologically (oldest to newest) for print reports
+    filteredRecords.sort((a, b) => {
+        const dateA = normalizeDateToYMD(a.procedureDate || a.visitDate);
+        const dateB = normalizeDateToYMD(b.procedureDate || b.visitDate);
+        return dateA.localeCompare(dateB);
+    });
     
     if (filteredRecords.length === 0) {
         const catLabel = selectedCategory === 'All' ? '' : selectedCategory.toLowerCase() + ' ';
