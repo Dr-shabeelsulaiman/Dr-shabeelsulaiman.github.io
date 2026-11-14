@@ -1351,6 +1351,7 @@ function printDateRange() {
     const endDate = document.getElementById('printEndDate').value;
     const format = document.getElementById('printFormat').value;
     const includeEmptyFields = document.getElementById('includeEmptyFields').checked;
+    const hidePatientNames = document.getElementById('hidePatientNames') ? document.getElementById('hidePatientNames').checked : false;
     const selectedCategory = document.getElementById('printCategory').value;
     const selectedInstitution = document.getElementById('printInstitution').value;
     
@@ -1389,8 +1390,16 @@ function printDateRange() {
     // Close modal
     bootstrap.Modal.getInstance(document.getElementById('printRangeModal')).hide();
     
+    let finalRecordsToPrint = filteredRecords;
+    if (hidePatientNames) {
+        finalRecordsToPrint = filteredRecords.map(record => ({
+            ...record,
+            name: '*** Confidential ***'
+        }));
+    }
+    
     // Generate print content
-    generatePrintReport(filteredRecords, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution);
+    generatePrintReport(finalRecordsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution);
 }
 
 // ==========================================
