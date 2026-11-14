@@ -1640,7 +1640,40 @@ function downloadCurrentPreviewHtml() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-    showSuccess('Report downloaded! Open file & tap "Print Report" to save as PDF.');
+    showSuccess('HTML Report downloaded! Open file & tap "Print Report" to save as PDF.');
+}
+
+function downloadCurrentPreviewWord() {
+    if (!currentPreviewHtml) return;
+    
+    // Create a simple MS Word compatible HTML document
+    const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset='utf-8'>
+    <title>Logbook Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 11pt; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+        th, td { border: 1px solid #cbd5e1; padding: 5px; text-align: left; }
+        .patient-record { margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    ${currentPreviewHtml.replace(/no-print/g, 'd-none')}
+</body>
+</html>`;
+
+    // \ufeff is the BOM for UTF-8 so Word reads it correctly
+    const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentPreviewFilename.replace('.html', '.doc');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    showSuccess('Word Document (.doc) downloaded successfully!');
 }
 
 function generatePrintReport(patientsToPrint, startDate, endDate, format, includeEmptyFields, selectedCategory, selectedInstitution = 'Yenepoya Medical College') {
